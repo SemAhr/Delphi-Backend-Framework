@@ -7,12 +7,13 @@ uses
   System.Rtti,
   Http.Context,
   Http.ParameterDescriptor,
-  Dto.Binder;
+  Http.BodyBinder.Contract,
+  Http.ParameterBinder.Contract;
 
 type
-  TParameterBinder = class
+  TParameterBinder = class(TInterfacedObject, IParameterBinder)
   private
-    FDtoBinder: TDtoBinder;
+    FBodyBinder: IHttpBodyBinder;
 
     function BindFromContext(
       const Context: THttpContext;
@@ -40,7 +41,7 @@ type
     ): TValue;
 
   public
-    constructor Create(const ADtoBinder: TDtoBinder);
+    constructor Create(const ABodyBinder: IHttpBodyBinder);
 
     function Bind(
       const Context: THttpContext;
@@ -55,14 +56,14 @@ uses
   Http.ValueConverter,
   AppExceptions;
 
-constructor TParameterBinder.Create(const ADtoBinder: TDtoBinder);
+constructor TParameterBinder.Create(const ABodyBinder: IHttpBodyBinder);
 begin
   inherited Create;
 
-  if ADtoBinder = nil then
-    raise EMissingDependencyException.Create('DTO binder is required.');
+  if ABodyBinder = nil then
+    raise EMissingDependencyException.Create('Body binder is required.');
 
-  FDtoBinder := ADtoBinder;
+  FBodyBinder := ABodyBinder;
 end;
 
 function TParameterBinder.Bind(
@@ -193,7 +194,7 @@ function TParameterBinder.BindFromBody(
   const Descriptor: TParameterDescriptor
 ): TValue;
 begin
-  Result := FDtoBinder.ParseBody(
+  Result := FBodyBinder.BindBody(
     Context.Request.Body,
     Descriptor.ParameterType
   );

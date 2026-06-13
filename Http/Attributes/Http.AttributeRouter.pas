@@ -6,15 +6,16 @@ uses
   System.SysUtils,
   System.Rtti,
   System.Generics.Collections,
-  Common.Container.Contract,
   Http.Core,
-  Http.RouteDescriptor;
+  Http.RouteDescriptor,
+  Http.Router.Contract,
+  Http.ActionInvoker.Contract;
 
 type
-  TAttributeRouter = class
+  TAttributeRouter = class(TInterfacedObject, IHttpRouter)
   private
     FRoutes: TObjectList<TRouteDescriptor>;
-    FContainer: IContainer;
+    FActionInvoker: IControllerActionInvoker;
 
     function SplitPath(const Value: string): TArray<string>;
 
@@ -32,7 +33,7 @@ type
   public
     constructor Create(
       const ARoutes: TObjectList<TRouteDescriptor>;
-      const AContainer: IContainer
+      const AActionInvoker: IControllerActionInvoker
     );
 
     destructor Destroy; override;
@@ -42,14 +43,25 @@ type
 
 implementation
 
+uses
+  AppExceptions,
+  Http.Context;
+
 constructor TAttributeRouter.Create(
   const ARoutes: TObjectList<TRouteDescriptor>;
-  const AContainer: IContainer
+  const AActionInvoker: IControllerActionInvoker
 );
 begin
   inherited Create;
+
+  if ARoutes = nil then
+    raise EMissingDependencyException.Create('Routes are required.');
+
+  if AActionInvoker = nil then
+    raise EMissingDependencyException.Create('Action invoker is required.');
+
   FRoutes := ARoutes;
-  FContainer := AContainer;
+  FActionInvoker := AActionInvoker;
 end;
 
 destructor TAttributeRouter.Destroy;
@@ -123,21 +135,15 @@ function TAttributeRouter.InvokeRoute(
   const Request: THttpRequest
 ): THttpResponse;
 var
-  Controller: TObject;
+  Context: THttpContext;
   ReturnValue: TValue;
 begin
-  Controller := FContainer.Resolve(Route.ControllerType.Handle);
-
-  if Controller = nil then
-    raise Exception.CreateFmt(
-      'Could not resolve controller "%s".',
-      [Route.ControllerType.Name]
-    );
-
-  ReturnValue := Route.MethodInfo.Invoke(
-    Controller,
-    [TValue.From<THttpRequest>(Request)]
-  );
+  Context := THttpContext.Create(Request);
+  try
+    ReturnValue := FActionInvoker.Invoke(Route, Context);
+  finally
+    Context.Free;
+  end;
 
   if ReturnValue.IsEmpty then
     Exit(THttpResponse.NoContent);

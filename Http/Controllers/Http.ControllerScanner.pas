@@ -29,6 +29,9 @@ type
 
 implementation
 
+uses
+  Http.ActionMetadata;
+
 constructor TControllerScanner.Create;
 begin
   inherited Create;
@@ -107,45 +110,63 @@ var
   BasePath: string;
   FullPath: string;
   HttpAttr: HttpMethodAttribute;
+  MetadataFactory: TActionMetadataFactory;
+  Metadata: TActionMetadata;
 begin
   Result := TObjectList<TRouteDescriptor>.Create(True);
+  MetadataFactory := TActionMetadataFactory.Create;
 
-  for ControllerClass in ControllerClasses do
-  begin
-    ControllerType := FRttiContext.GetType(ControllerClass);
-
-    if not ImplementsHttpController(ControllerType) then
-      raise Exception.CreateFmt(
-        'Controller "%s" must implement IHttpController.',
-        [ControllerClass.ClassName]
-      );
-
-    if not (ControllerType is TRttiInstanceType) then
-      Continue;
-
-    InstanceType := TRttiInstanceType(ControllerType);
-    BasePath := GetControllerBasePath(ControllerType);
-
-    for MethodInfo in ControllerType.GetMethods do
-    begin
-      for Attr in MethodInfo.GetAttributes do
+  try
+    try
+      for ControllerClass in ControllerClasses do
       begin
-        if Attr is HttpMethodAttribute then
-        begin
-          HttpAttr := HttpMethodAttribute(Attr);
-          FullPath := CombinePaths(BasePath, HttpAttr.Path);
+        ControllerType := FRttiContext.GetType(ControllerClass);
 
-          Result.Add(
-            TRouteDescriptor.Create(
-              HttpAttr.Method,
-              FullPath,
-              InstanceType,
-              MethodInfo
-            )
+        if not ImplementsHttpController(ControllerType) then
+          raise Exception.CreateFmt(
+            'Controller "%s" must implement IHttpController.',
+            [ControllerClass.ClassName]
           );
+
+        if not (ControllerType is TRttiInstanceType) then
+          Continue;
+
+        InstanceType := TRttiInstanceType(ControllerType);
+        BasePath := GetControllerBasePath(ControllerType);
+
+        for MethodInfo in ControllerType.GetMethods do
+        begin
+          for Attr in MethodInfo.GetAttributes do
+          begin
+            if Attr is HttpMethodAttribute then
+            begin
+              HttpAttr := HttpMethodAttribute(Attr);
+              FullPath := CombinePaths(BasePath, HttpAttr.Path);
+              Metadata := MetadataFactory.CreateMetadata(MethodInfo);
+
+              try
+                Result.Add(
+                  TRouteDescriptor.Create(
+                    HttpAttr.Method,
+                    FullPath,
+                    InstanceType,
+                    MethodInfo,
+                    Metadata.Parameters
+                  )
+                );
+              finally
+                Metadata.Free;
+              end;
+            end;
+          end;
         end;
       end;
+    except
+      Result.Free;
+      raise;
     end;
+  finally
+    MetadataFactory.Free;
   end;
 end;
 

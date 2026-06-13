@@ -34,17 +34,19 @@ type
 implementation
 
 constructor TRouteDescriptor.Create(
-  const Method: string;
-  const Path: string;
-  const ControllerType: TRttiInstanceType;
-  const MethodInfo: TRttiMethod
+  const AMethod: string;
+  const APath: string;
+  const AControllerType: TRttiInstanceType;
+  const AMethodInfo: TRttiMethod;
+  const AParameters: TArray<TParameterDescriptor>
 );
 begin
   inherited Create;
-  FMethod := UpperCase(Method);
-  FPath := Path;
-  FControllerType := ControllerType;
-  FMethodInfo := MethodInfo;
+  FMethod := UpperCase(AMethod);
+  FPath := APath;
+  FControllerType := AControllerType;
+  FMethodInfo := AMethodInfo;
+  FParameters := AParameters;
 end;
 
 end.

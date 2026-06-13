@@ -8,18 +8,19 @@ uses
   Common.Container.Contract,
   Http.Context,
   Http.RouteDescriptor,
-  Http.ParameterBinder;
+  Http.ParameterBinder.Contract,
+  Http.ActionInvoker.Contract;
 
 type
-  TControllerActionInvoker = class
+  TControllerActionInvoker = class(TInterfacedObject, IControllerActionInvoker)
   private
     FContainer: IContainer;
-    FParameterBinder: TParameterBinder;
+    FParameterBinder: IParameterBinder;
 
   public
     constructor Create(
       const AContainer: IContainer;
-      const AParameterBinder: TParameterBinder
+      const AParameterBinder: IParameterBinder
     );
 
     function Invoke(
@@ -35,7 +36,7 @@ uses
 
 constructor TControllerActionInvoker.Create(
   const AContainer: IContainer;
-  const AParameterBinder: TParameterBinder
+  const AParameterBinder: IParameterBinder
 );
 begin
   inherited Create;

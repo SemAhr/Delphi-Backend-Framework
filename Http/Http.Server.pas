@@ -8,13 +8,13 @@ uses
   IdContext,
   IdCustomHTTPServer,
   Http.Core,
-  Http.AttributeRouter;
+  Http.Router.Contract;
 
 type
   TSimpleHttpServer = class
   private
     FServer: TIdHTTPServer;
-    FRouter: TAttributeRouter;
+    FRouter: IHttpRouter;
 
     procedure HandleCommand(
       AContext: TIdContext;
@@ -32,7 +32,7 @@ type
   public
     constructor Create(
       const APort: Integer;
-      const ARouter: TAttributeRouter
+      const ARouter: IHttpRouter
     );
 
     destructor Destroy; override;
@@ -44,14 +44,18 @@ type
 implementation
 
 uses
-  System.Classes;
+  System.Classes,
+  AppExceptions;
 
 constructor TSimpleHttpServer.Create(
   const APort: Integer;
-  const ARouter: TAttributeRouter
+  const ARouter: IHttpRouter
 );
 begin
   inherited Create;
+
+  if ARouter = nil then
+    raise EMissingDependencyException.Create('Router is required.');
 
   FRouter := ARouter;
 
@@ -65,7 +69,7 @@ destructor TSimpleHttpServer.Destroy;
 begin
   Stop;
   FServer.Free;
-  FRouter.Free;
+  FRouter := nil;
 
   inherited;
 end;
