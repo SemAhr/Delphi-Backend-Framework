@@ -57,7 +57,7 @@ implementation
 constructor RouteAttribute.Create(const APath: string);
 begin
   inherited Create;
-  FPath := Path;
+  FPath := APath;
 end;
 
 { HttpMethodAttribute }

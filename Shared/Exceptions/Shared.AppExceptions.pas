@@ -1,4 +1,4 @@
-unit AppExceptions;
+unit Shared.AppExceptions;
 
 interface
 
@@ -56,4 +56,3 @@ begin
 end;
 
 end.
-

@@ -5,7 +5,7 @@ interface
 uses
   System.SysUtils,
   System.Rtti,
-  Common.Container.Contract,
+  Shared.Container.Contract,
   Http.Context,
   Http.RouteDescriptor,
   Http.ParameterBinder.Contract,
@@ -32,7 +32,7 @@ type
 implementation
 
 uses
-  AppExceptions;
+  Shared.AppExceptions;
 
 constructor TControllerActionInvoker.Create(
   const AContainer: IContainer;

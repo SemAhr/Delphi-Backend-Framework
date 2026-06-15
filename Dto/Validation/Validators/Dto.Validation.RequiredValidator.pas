@@ -1,4 +1,4 @@
-unit DtoRequired.Validator;
+unit Dto.Validation.RequiredValidator;
 
 interface
 
@@ -19,7 +19,7 @@ type
 implementation
 
 uses
-  RttiAttribute.Helpers,
+  Shared.RttiAttribute.Helpers,
   Dto.Attributes;
 
 class function TDtoRequiredValidator.TryValidate(

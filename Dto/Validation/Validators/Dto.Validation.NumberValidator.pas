@@ -1,4 +1,4 @@
-unit DtoNumber.Validator;
+unit Dto.Validation.NumberValidator;
 
 interface
 
@@ -25,7 +25,7 @@ uses
   System.JSON,
   System.Classes,
   System.Variants,
-  RttiAttribute.Helpers,
+  Shared.RttiAttribute.Helpers,
   Dto.Attributes,
   Dto.TypeInspector;
 

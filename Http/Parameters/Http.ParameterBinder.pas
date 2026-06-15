@@ -54,7 +54,7 @@ implementation
 uses
   Http.Parameter.Binding,
   Http.ValueConverter,
-  AppExceptions;
+  Shared.AppExceptions;
 
 constructor TParameterBinder.Create(const ABodyBinder: IHttpBodyBinder);
 begin

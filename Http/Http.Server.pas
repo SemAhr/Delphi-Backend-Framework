@@ -45,7 +45,7 @@ implementation
 
 uses
   System.Classes,
-  AppExceptions;
+  Shared.AppExceptions;
 
 constructor TSimpleHttpServer.Create(
   const APort: Integer;

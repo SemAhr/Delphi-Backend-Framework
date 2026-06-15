@@ -1,4 +1,4 @@
-unit DtoBoolean.Validator;
+unit Dto.Validation.BooleanValidator;
 
 interface
 

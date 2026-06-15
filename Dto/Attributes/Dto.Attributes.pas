@@ -82,7 +82,7 @@ type
 implementation
 
 uses
-  AppExceptions,
+  Shared.AppExceptions,
   System.Math;
 
 constructor JsonNameAttribute.Create(const Name: string);

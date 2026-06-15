@@ -1,4 +1,4 @@
-unit DtoString.Validator;
+unit Dto.Validation.StringValidator;
 
 interface
 
@@ -24,7 +24,7 @@ uses
   System.JSON,
   System.Variants,
   System.Classes,
-  RttiAttribute.Helpers,
+  Shared.RttiAttribute.Helpers,
   Dto.Attributes;
 
 class function TDtoStringValidator.TryValidate(

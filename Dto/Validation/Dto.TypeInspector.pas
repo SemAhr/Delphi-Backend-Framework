@@ -25,7 +25,7 @@ implementation
 
 uses
   System.SysUtils,
-  RttiAttribute.Helpers,
+  Shared.RttiAttribute.Helpers,
   Dto.Attributes;
 
 class function TDtoTypeInspector.IsStringType(

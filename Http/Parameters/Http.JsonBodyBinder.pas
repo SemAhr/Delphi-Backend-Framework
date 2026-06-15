@@ -5,15 +5,14 @@ interface
 uses
   System.Rtti,
   Http.BodyBinder.Contract,
-  Dto.Binder;
+  Dto.Binder.Contract;
 
 type
   TJsonBodyBinder = class(TInterfacedObject, IHttpBodyBinder)
   private
-    FDtoBinder: TDtoBinder;
+    FDtoBinder: IDtoBinder;
   public
-    constructor Create;
-    destructor Destroy; override;
+    constructor Create(const ADtoBinder: IDtoBinder);
 
     function BindBody(
       const RawBody: string;
@@ -24,18 +23,16 @@ type
 implementation
 
 uses
-  AppExceptions;
+  Shared.AppExceptions;
 
-constructor TJsonBodyBinder.Create;
+constructor TJsonBodyBinder.Create(const ADtoBinder: IDtoBinder);
 begin
   inherited Create;
-  FDtoBinder := TDtoBinder.Create;
-end;
 
-destructor TJsonBodyBinder.Destroy;
-begin
-  FDtoBinder.Free;
-  inherited;
+  if ADtoBinder = nil then
+    raise EMissingDependencyException.Create('DTO binder is required.');
+
+  FDtoBinder := ADtoBinder;
 end;
 
 function TJsonBodyBinder.BindBody(

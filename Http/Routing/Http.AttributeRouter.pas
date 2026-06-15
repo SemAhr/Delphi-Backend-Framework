@@ -44,7 +44,7 @@ type
 implementation
 
 uses
-  AppExceptions,
+  Shared.AppExceptions,
   Http.Context;
 
 constructor TAttributeRouter.Create(

@@ -4,7 +4,7 @@ interface
 
 uses
   System.Generics.Collections,
-  Common.Container.Contract,
+  Shared.Container.Contract,
   Http.RouteDescriptor,
   Http.Router.Contract,
   Http.Server;
@@ -27,6 +27,8 @@ type
 implementation
 
 uses
+  Dto.Binder,
+  Dto.Binder.Contract,
   Http.ActionInvoker,
   Http.ActionInvoker.Contract,
   Http.AttributeRouter,
@@ -40,11 +42,13 @@ class function THttpComposition.CreateDefaultRouter(
   const Container: IContainer
 ): IHttpRouter;
 var
+  DtoBinder: IDtoBinder;
   BodyBinder: IHttpBodyBinder;
   ParameterBinder: IParameterBinder;
   ActionInvoker: IControllerActionInvoker;
 begin
-  BodyBinder := TJsonBodyBinder.Create;
+  DtoBinder := TDtoBinder.Create;
+  BodyBinder := TJsonBodyBinder.Create(DtoBinder);
   ParameterBinder := TParameterBinder.Create(BodyBinder);
   ActionInvoker := TControllerActionInvoker.Create(Container, ParameterBinder);
 

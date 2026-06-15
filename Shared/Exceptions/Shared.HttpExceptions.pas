@@ -1,4 +1,4 @@
-unit HttpExceptions;
+unit Shared.HttpExceptions;
 
 interface
 
@@ -203,5 +203,3 @@ begin
 end;
 
 end.
-
-

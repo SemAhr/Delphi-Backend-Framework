@@ -6,7 +6,7 @@ uses
   System.Generics.Collections,
   System.Rtti,
   System.JSON,
-  Dto.Binder.Port;
+  Dto.Binder.Contract;
 
 type
   TDtoBindingContext = record
@@ -85,16 +85,16 @@ implementation
 uses
   System.SysUtils,
   System.TypInfo,
-  AppExceptions,
+  Shared.AppExceptions,
   Dto.Metadata,
   Dto.Attributes,
   Dto.Validation.Context,
   Dto.TypeInspector,
-  DtoRequired.Validator,
-  DtoString.Validator,
-  DtoBoolean.Validator,
-  DtoNumber.Validator,
-  DtoDate.Validator;
+  Dto.Validation.RequiredValidator,
+  Dto.Validation.StringValidator,
+  Dto.Validation.BooleanValidator,
+  Dto.Validation.NumberValidator,
+  Dto.Validation.DateValidator;
 
 { TDtoBindingContext }
 
