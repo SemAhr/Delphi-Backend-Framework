@@ -23,7 +23,7 @@ type
     constructor Create;
 
     function Scan(
-      const ControllerClasses: array of TClass
+      const AControllerClasses: array of TClass
     ): TObjectList<TRouteDescriptor>;
   end;
 
@@ -99,7 +99,7 @@ begin
 end;
 
 function TControllerScanner.Scan(
-  const ControllerClasses: array of TClass
+  const AControllerClasses: array of TClass
 ): TObjectList<TRouteDescriptor>;
 var
   ControllerClass: TClass;
@@ -118,7 +118,7 @@ begin
 
   try
     try
-      for ControllerClass in ControllerClasses do
+      for ControllerClass in AControllerClasses do
       begin
         ControllerType := FRttiContext.GetType(ControllerClass);
 

@@ -1,4 +1,4 @@
-unit Shared.AppExceptions;
+unit AppExceptions;
 
 interface
 
@@ -26,8 +26,8 @@ type
   public
     property Messages: TArray<string> read GetMessages;
 
-    constructor Create(const Message: string); overload;
-    constructor Create(const Messages: TArray<string>); overload;
+    constructor Create(const AMessage: string); overload;
+    constructor Create(const AMessages: TArray<string>); overload;
   end;
 
   EMissingAttributeException = class(EMetadataException);
@@ -40,14 +40,14 @@ implementation
 
 { EBinderException }
 
-constructor EBinderException.Create(const Message: string);
+constructor EBinderException.Create(const AMessage: string);
 begin
-  inherited Create(Message);
+  inherited Create(AMessage);
 end;
 
-constructor EBinderException.Create(const Messages: TArray<string>);
+constructor EBinderException.Create(const AMessages: TArray<string>);
 begin
-  inherited Create(string.Join(',', Messages));
+  inherited Create(string.Join(',', AMessages));
 end;
 
 function EBinderException.GetMessages: TArray<string>;

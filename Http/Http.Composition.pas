@@ -4,7 +4,7 @@ interface
 
 uses
   System.Generics.Collections,
-  Shared.Container.Contract,
+  Container.Contract,
   Http.RouteDescriptor,
   Http.Router.Contract,
   Http.Server;
@@ -12,16 +12,13 @@ uses
 type
   THttpComposition = class sealed
   public
-    class function CreateDefaultRouter(
-      const Routes: TObjectList<TRouteDescriptor>;
-      const Container: IContainer
-    ): IHttpRouter; static;
+    class function CreateDefaultRouter(const ARoutes: TObjectList<TRouteDescriptor>; const AContainer: IContainer): IHttpRouter; static;
 
     class function CreateDefaultServer(
-      const Port: Integer;
-      const Routes: TObjectList<TRouteDescriptor>;
-      const Container: IContainer
-    ): TSimpleHttpServer; static;
+      const APort: Integer;
+      const ARoutes: TObjectList<TRouteDescriptor>;
+      const AContainer: IContainer
+    ): THttpServer; static;
   end;
 
 implementation
@@ -37,33 +34,25 @@ uses
   Http.ParameterBinder,
   Http.ParameterBinder.Contract;
 
-class function THttpComposition.CreateDefaultRouter(
-  const Routes: TObjectList<TRouteDescriptor>;
-  const Container: IContainer
-): IHttpRouter;
-var
-  DtoBinder: IDtoBinder;
-  BodyBinder: IHttpBodyBinder;
-  ParameterBinder: IParameterBinder;
-  ActionInvoker: IControllerActionInvoker;
+class function THttpComposition.CreateDefaultRouter(const ARoutes: TObjectList<TRouteDescriptor>; const AContainer: IContainer): IHttpRouter;
 begin
-  DtoBinder := TDtoBinder.Create;
-  BodyBinder := TJsonBodyBinder.Create(DtoBinder);
-  ParameterBinder := TParameterBinder.Create(BodyBinder);
-  ActionInvoker := TControllerActionInvoker.Create(Container, ParameterBinder);
+  var DtoBinder := TDtoBinder.Create;
+  var BodyBinder := TJsonBodyBinder.Create(DtoBinder);
+  var ParameterBinder := TParameterBinder.Create(BodyBinder);
+  var ActionInvoker := TControllerActionInvoker.Create(AContainer, ParameterBinder);
 
-  Result := TAttributeRouter.Create(Routes, ActionInvoker);
+  Result := TAttributeRouter.Create(ARoutes, ActionInvoker);
 end;
 
 class function THttpComposition.CreateDefaultServer(
-  const Port: Integer;
-  const Routes: TObjectList<TRouteDescriptor>;
-  const Container: IContainer
-): TSimpleHttpServer;
+  const APort: Integer;
+  const ARoutes: TObjectList<TRouteDescriptor>;
+  const AContainer: IContainer
+): THttpServer;
 begin
-  Result := TSimpleHttpServer.Create(
-    Port,
-    CreateDefaultRouter(Routes, Container)
+  Result := THttpServer.Create(
+    APort,
+    THttpComposition.CreateDefaultRouter(ARoutes, AContainer)
   );
 end;
 

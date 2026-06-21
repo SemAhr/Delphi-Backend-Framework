@@ -5,7 +5,7 @@ interface
 uses
   System.SysUtils,
   System.Rtti,
-  Shared.Container.Contract,
+  Container.Contract,
   Http.Context,
   Http.RouteDescriptor,
   Http.ParameterBinder.Contract,
@@ -24,15 +24,15 @@ type
     );
 
     function Invoke(
-      const Route: TRouteDescriptor;
-      const Context: THttpContext
+      const ARoute: TRouteDescriptor;
+      const AContext: THttpContext
     ): TValue;
   end;
 
 implementation
 
 uses
-  Shared.AppExceptions;
+  AppExceptions;
 
 constructor TControllerActionInvoker.Create(
   const AContainer: IContainer;
@@ -52,28 +52,28 @@ begin
 end;
 
 function TControllerActionInvoker.Invoke(
-  const Route: TRouteDescriptor;
-  const Context: THttpContext
+  const ARoute: TRouteDescriptor;
+  const AContext: THttpContext
 ): TValue;
 var
   Controller: TObject;
   Arguments: TArray<TValue>;
   Index: Integer;
 begin
-  Controller := FContainer.Resolve(Route.ControllerType.Handle);
+  Controller := FContainer.Resolve(ARoute.ControllerType.Handle);
 
   if Controller = nil then
     raise EMissingDependencyException.CreateFmt(
       'Controller "%s" could not be resolved.',
-      [Route.ControllerType.Name]
+      [ARoute.ControllerType.Name]
     );
 
-  SetLength(Arguments, Length(Route.Parameters));
+  SetLength(Arguments, Length(ARoute.Parameters));
 
-  for Index := 0 to High(Route.Parameters) do
-    Arguments[Index] := FParameterBinder.Bind(Context, Route.Parameters[Index]);
+  for Index := 0 to High(ARoute.Parameters) do
+    Arguments[Index] := FParameterBinder.Bind(AContext, ARoute.Parameters[Index]);
 
-  Result := Route.MethodInfo.Invoke(Controller, Arguments);
+  Result := ARoute.MethodInfo.Invoke(Controller, Arguments);
 end;
 
 end.

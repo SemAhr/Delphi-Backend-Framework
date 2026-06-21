@@ -10,33 +10,33 @@ type
   TDtoRequiredValidator = class
   public
     class function TryValidate(
-      const PropertyInfo: TRttiProperty;
-      const JsonValue: TJSONValue;
-      out ErrorMessage: string
+      const APropertyInfo: TRttiProperty;
+      const AJsonValue: TJSONValue;
+      out AErrorMessage: string
     ): Boolean; static;
   end;
 
 implementation
 
 uses
-  Shared.RttiAttribute.Helpers,
+  RttiAttribute.Helpers,
   Dto.Attributes;
 
 class function TDtoRequiredValidator.TryValidate(
-  const PropertyInfo: TRttiProperty;
-  const JsonValue: TJSONValue;
-  out ErrorMessage: string
+  const APropertyInfo: TRttiProperty;
+  const AJsonValue: TJSONValue;
+  out AErrorMessage: string
 ): Boolean;
 begin
   Result := True;
-  ErrorMessage := '';
+  AErrorMessage := '';
 
-  if JsonValue <> nil then
+  if AJsonValue <> nil then
     Exit;
 
-  if TRttiAttributeHelpers.HasAttribute<RequiredAttribute>(PropertyInfo) then
+  if TRttiAttributeHelpers.HasAttribute<RequiredAttribute>(APropertyInfo) then
   begin
-    ErrorMessage := 'is required';
+    AErrorMessage := 'is required';
     Exit(False);
   end;
 end;

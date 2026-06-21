@@ -10,9 +10,9 @@ type
   TDtoNumberValidator = class
   public
     class function TryValidate(
-      const Context: TDtoValidationContext;
-      out ParsedValue: TValue;
-      out ErrorMessages: TArray<string>
+      const AContext: TDtoValidationContext;
+      out AParsedValue: TValue;
+      out AErrorMessages: TArray<string>
     ): Boolean; static;
   end;
 
@@ -25,14 +25,14 @@ uses
   System.JSON,
   System.Classes,
   System.Variants,
-  Shared.RttiAttribute.Helpers,
+  RttiAttribute.Helpers,
   Dto.Attributes,
   Dto.TypeInspector;
 
 class function TDtoNumberValidator.TryValidate(
-  const Context: TDtoValidationContext;
-  out ParsedValue: TValue;
-  out ErrorMessages: TArray<string>
+  const AContext: TDtoValidationContext;
+  out AParsedValue: TValue;
+  out AErrorMessages: TArray<string>
 ): Boolean;
 var
   NumberValue: Double;
@@ -42,34 +42,34 @@ var
   LocalErrors: TList<string>;
 begin
   Result := False;
-  ParsedValue := TValue.Empty;
-  SetLength(ErrorMessages, 0);
+  AParsedValue := TValue.Empty;
+  SetLength(AErrorMessages, 0);
 
   LocalErrors := TList<string>.Create;
   try
-    if not (Context.JsonValue is TJSONNumber) then
+    if not (AContext.JsonValue is TJSONNumber) then
     begin
-      if TDtoTypeInspector.IsIntegerType(Context.PropertyInfo) or
-         TDtoTypeInspector.IsInt64Type(Context.PropertyInfo) then
-        ErrorMessages := ['must be an integer']
+      if TDtoTypeInspector.IsIntegerType(AContext.PropertyInfo) or
+         TDtoTypeInspector.IsInt64Type(AContext.PropertyInfo) then
+        AErrorMessages := ['must be an integer']
       else
-        ErrorMessages := ['must be a number'];
+        AErrorMessages := ['must be a number'];
 
       Exit;
     end;
 
-    NumberValue := TJSONNumber(Context.JsonValue).AsDouble;
+    NumberValue := TJSONNumber(AContext.JsonValue).AsDouble;
 
-    if (TDtoTypeInspector.IsIntegerType(Context.PropertyInfo) or
-        TDtoTypeInspector.IsInt64Type(Context.PropertyInfo)) and
+    if (TDtoTypeInspector.IsIntegerType(AContext.PropertyInfo) or
+        TDtoTypeInspector.IsInt64Type(AContext.PropertyInfo)) and
        (Frac(NumberValue) <> 0) then
     begin
-      ErrorMessages := ['must be an integer'];
+      AErrorMessages := ['must be an integer'];
       Exit;
     end;
 
     if TRttiAttributeHelpers.TryGetAttribute<MinAttribute>(
-      Context.PropertyInfo,
+      AContext.PropertyInfo,
       MinRule
     ) and (NumberValue < MinRule.Value) then
     begin

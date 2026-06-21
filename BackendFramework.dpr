@@ -6,10 +6,10 @@ program BackendFramework;
 
 uses
   System.SysUtils,
-  Shared.Container.Contract in 'Shared\Container\Shared.Container.Contract.pas',
-  Shared.AppExceptions in 'Shared\Exceptions\Shared.AppExceptions.pas',
-  Shared.HttpExceptions in 'Shared\Exceptions\Shared.HttpExceptions.pas',
-  Shared.RttiAttribute.Helpers in 'Shared\Rtti\Shared.RttiAttribute.Helpers.pas',
+  Container.Contract in 'Shared\Container\Container.Contract.pas',
+  AppExceptions in 'Shared\Exceptions\AppExceptions.pas',
+  HttpExceptions in 'Shared\Exceptions\HttpExceptions.pas',
+  RttiAttribute.Helpers in 'Shared\Rtti\RttiAttribute.Helpers.pas',
   Dto.Attributes in 'Dto\Attributes\Dto.Attributes.pas',
   Dto.Binder.Contract in 'Dto\Binding\Dto.Binder.Contract.pas',
   Dto.Binder in 'Dto\Binding\Dto.Binder.pas',
@@ -39,7 +39,7 @@ uses
   Http.ValueConverter in 'Http\Parameters\Http.ValueConverter.pas',
   Http.BodyBinder.Contract in 'Http\Parameters\Http.BodyBinder.Contract.pas',
   Http.ParameterBinder.Contract in 'Http\Parameters\Http.ParameterBinder.Contract.pas',
-  Http.JsonBodyBinder in 'Http\Parameters\Http.JsonBodyBinder.pas',
+  Http.BodyBinder in 'Http\Parameters\Http.BodyBinder.pas',
   Http.ParameterBinder in 'Http\Parameters\Http.ParameterBinder.pas',
   Http.Composition in 'Http\Http.Composition.pas';
 

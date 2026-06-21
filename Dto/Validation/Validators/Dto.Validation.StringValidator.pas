@@ -10,9 +10,9 @@ type
   TDtoStringValidator = class
   public
     class function TryValidate(
-      const Context: TDtoValidationContext;
-      out ParsedValue: TValue;
-      out ErrorMessages: TArray<string>
+      const AContext: TDtoValidationContext;
+      out AParsedValue: TValue;
+      out AErrorMessages: TArray<string>
     ): Boolean; static;
   end;
 
@@ -24,13 +24,13 @@ uses
   System.JSON,
   System.Variants,
   System.Classes,
-  Shared.RttiAttribute.Helpers,
+  RttiAttribute.Helpers,
   Dto.Attributes;
 
 class function TDtoStringValidator.TryValidate(
-  const Context: TDtoValidationContext;
-  out ParsedValue: TValue;
-  out ErrorMessages: TArray<string>
+  const AContext: TDtoValidationContext;
+  out AParsedValue: TValue;
+  out AErrorMessages: TArray<string>
 ): Boolean;
 var
   StringValue: string;
@@ -39,25 +39,25 @@ var
   LocalErrors: TList<string>;
 begin
   Result := False;
-  ParsedValue := TValue.Empty;
-  SetLength(ErrorMessages, 0);
+  AParsedValue := TValue.Empty;
+  SetLength(AErrorMessages, 0);
 
   LocalErrors := TList<string>.Create;
   try
-    if not (Context.JsonValue is TJSONString) then
+    if not (AContext.JsonValue is TJSONString) then
     begin
-      ErrorMessages := ['must be a string'];
+      AErrorMessages := ['must be a string'];
       Exit;
     end;
 
-    StringValue := TJSONString(Context.JsonValue).Value;
+    StringValue := TJSONString(AContext.JsonValue).Value;
 
-    if TRttiAttributeHelpers.HasAttribute<RequiredAttribute>(Context.PropertyInfo) and
+    if TRttiAttributeHelpers.HasAttribute<RequiredAttribute>(AContext.PropertyInfo) and
        (Trim(StringValue) = '') then
       LocalErrors.Add('cannot be empty');
 
     if TRttiAttributeHelpers.TryGetAttribute<LengthAttribute>(
-      Context.PropertyInfo,
+      AContext.PropertyInfo,
       LengthRule
     ) then
     begin
@@ -80,7 +80,7 @@ begin
     end;
 
     if TRttiAttributeHelpers.HasAttribute<IsNumberStringAttribute>(
-      Context.PropertyInfo
+      AContext.PropertyInfo
     ) then
     begin
       for var Index := 1 to Length(StringValue) do
@@ -94,7 +94,7 @@ begin
     end;
 
     if TRttiAttributeHelpers.TryGetAttribute<IsInAttribute>(
-      Context.PropertyInfo,
+      AContext.PropertyInfo,
       IsInRule
     ) then
     begin
@@ -121,11 +121,11 @@ begin
 
     if LocalErrors.Count > 0 then
     begin
-      ErrorMessages := LocalErrors.ToArray;
+      AErrorMessages := LocalErrors.ToArray;
       Exit;
     end;
 
-    ParsedValue := TValue.From<string>(StringValue);
+    AParsedValue := TValue.From<string>(StringValue);
     Result := True;
   finally
     LocalErrors.Free;

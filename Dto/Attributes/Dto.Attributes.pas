@@ -11,7 +11,7 @@ type
   private
     FName: string;
   public
-    constructor Create(const Name: string);
+    constructor Create(const AName: string);
     property Name: string read FName;
   end;
 
@@ -26,8 +26,8 @@ type
     FMinLength: Integer;
     FMaxLength: Integer;
   public
-    constructor Create(const Length: Integer); overload;
-    constructor Create(const MinLength, MaxLength: Integer); overload;
+    constructor Create(const ALength: Integer); overload;
+    constructor Create(const AMinLength, AMaxLength: Integer); overload;
 
     property MinLength: Integer read FMinLength;
     property MaxLength: Integer read FMaxLength;
@@ -37,7 +37,7 @@ type
   private
     FValue: Double;
   public
-    constructor Create(const Value: Double);
+    constructor Create(const AValue: Double);
     property Value: Double read FValue;
   end;
 
@@ -45,7 +45,7 @@ type
   private
     FValue: Double;
   public
-    constructor Create(const Value: Double);
+    constructor Create(const AValue: Double);
     property Value: Double read FValue;
   end;
 
@@ -53,7 +53,7 @@ type
   private
     FValue: Integer;
   public
-    constructor Create(const Value: Integer);
+    constructor Create(const AValue: Integer);
     property Value: Integer read FValue;
   end;
 
@@ -61,7 +61,7 @@ type
   private
     FValue: Integer;
   public
-    constructor Create(const Value: Integer);
+    constructor Create(const AValue: Integer);
     property Value: Integer read FValue;
   end;
 
@@ -69,8 +69,8 @@ type
   private
     FValues: TArray<Variant>;
   public
-    constructor Create(const Values: TArray<Double>); overload;
-    constructor Create(const Values: TArray<string>); overload;
+    constructor Create(const AValues: TArray<Double>); overload;
+    constructor Create(const AValues: TArray<string>); overload;
 
     property Values: TArray<Variant> read FValues;
   end;
@@ -82,16 +82,16 @@ type
 implementation
 
 uses
-  Shared.AppExceptions,
+  AppExceptions,
   System.Math;
 
-constructor JsonNameAttribute.Create(const Name: string);
+constructor JsonNameAttribute.Create(const AName: string);
 var
   NormalizedName: string;
 begin
   inherited Create;
 
-  NormalizedName := Name.Trim;
+  NormalizedName := AName.Trim;
 
   if NormalizedName.IsEmpty then
     raise EInvalidAttributeException.Create('JsonNameAttribute name cannot be empty.');
@@ -99,111 +99,111 @@ begin
   FName := NormalizedName;
 end;
 
-constructor LengthAttribute.Create(const Length: Integer);
+constructor LengthAttribute.Create(const ALength: Integer);
 begin
   inherited Create;
 
-  if Length <= 0 then
+  if ALength <= 0 then
     raise EOutOfRangeAttributeException.Create('LengthAttribute length must be greater than zero.');
 
   FMinLength := Length;
   FMaxLength := Length;
 end;
 
-constructor LengthAttribute.Create(const MinLength, MaxLength: Integer);
+constructor LengthAttribute.Create(const AMinLength, AMaxLength: Integer);
 begin
   inherited Create;
 
-  if MinLength < 0 then
+  if AMinLength < 0 then
     raise EOutOfRangeAttributeException.Create('LengthAttribute min length cannot be less than zero.');
 
-  if MaxLength <= 0 then
+  if AMaxLength <= 0 then
     raise EOutOfRangeAttributeException.Create('LengthAttribute max length must be greater than zero.');
 
-  if MinLength > MaxLength then
+  if AMinLength > AMaxLength then
     raise EInvalidAttributeException.Create('LengthAttribute min length cannot be greater than max length.');
 
   FMinLength := MinLength;
   FMaxLength := MaxLength;
 end;
 
-constructor MinAttribute.Create(const Value: Double);
+constructor MinAttribute.Create(const AValue: Double);
 begin
   inherited Create;
 
-  if IsNan(Value) or IsInfinite(Value) then
+  if IsNan(AValue) or IsInfinite(AValue) then
     raise EInvalidAttributeException.Create('MinAttribute value must be a finite number.');
 
-  FValue := Value;
+  FValue := AValue;
 end;
 
-constructor MaxAttribute.Create(const Value: Double);
+constructor MaxAttribute.Create(const AValue: Double);
 begin
   inherited Create;
 
-  if IsNan(Value) or IsInfinite(Value) then
+  if IsNan(AValue) or IsInfinite(AValue) then
     raise EInvalidAttributeException.Create('MaxAttribute value must be a finite number.');
 
-  FValue := Value;
+  FValue := AValue;
 end;
 
-constructor MinItemsAttribute.Create(const Value: Integer);
+constructor MinItemsAttribute.Create(const AValue: Integer);
 begin
   inherited Create;
 
-  if Value < 0 then
+  if AValue < 0 then
     raise EOutOfRangeAttributeException.Create('MinItemsAttribute value cannot be less than zero.');
 
-  FValue := Value;
+  FValue := AValue;
 end;
 
-constructor MaxItemsAttribute.Create(const Value: Integer);
+constructor MaxItemsAttribute.Create(const AValue: Integer);
 begin
   inherited Create;
 
-  if Value <= 0 then
+  if AValue <= 0 then
     raise EOutOfRangeAttributeException.Create('MaxItemsAttribute value must be greater than zero.');
 
-  FValue := Value;
+  FValue := AValue;
 end;
 
-constructor IsInAttribute.Create(const Values: TArray<Double>);
+constructor IsInAttribute.Create(const AValues: TArray<Double>);
 begin
   inherited Create;
 
-  if Length(Values) = 0 then
+  if Length(AValues) = 0 then
     raise EInvalidAttributeException.Create('IsInAttribute values cannot be empty.');
 
-  SetLength(FValues, Length(Values));
+  SetLength(FValues, Length(AValues));
 
-  for var Index := 0 to High(Values) do
+  for var Index := 0 to High(AValues) do
   begin
-    if IsNan(Values[Index]) or IsInfinite(Values[Index]) then
+    if IsNan(AValues[Index]) or IsInfinite(AValues[Index]) then
       raise EInvalidAttributeException.Create(Format('IsInAttribute value at index %d must be a finite number.', [Index]));
 
-    FValues[Index] := Values[Index];
+    FAValues[Index] := AValues[Index];
   end;
 end;
 
-constructor IsInAttribute.Create(const Values: TArray<string>);
+constructor IsInAttribute.Create(const AValues: TArray<string>);
 var
   NormalizedValue: string;
 begin
   inherited Create;
 
-  if Length(Values) = 0 then
+  if Length(AValues) = 0 then
     raise EInvalidAttributeException.Create('IsInAttribute values cannot be empty.');
 
-  SetLength(FValues, Length(Values));
+  SetLength(FValues, Length(AValues));
 
-  for var Index := 0 to High(Values) do
+  for var Index := 0 to High(AValues) do
   begin
-    NormalizedValue := Values[Index].Trim;
+    NormalizedValue := AValues[Index].Trim;
 
     if NormalizedValue.IsEmpty then
       raise EInvalidAttributeException.Create(Format('IsInAttribute value at index %d cannot be empty.', [Index]));
 
-    FValues[Index] := NormalizedValue;
+    FAValues[Index] := NormalizedValue;
   end;
 end;
 

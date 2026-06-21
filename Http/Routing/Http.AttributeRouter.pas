@@ -17,17 +17,17 @@ type
     FRoutes: TObjectList<TRouteDescriptor>;
     FActionInvoker: IControllerActionInvoker;
 
-    function SplitPath(const Value: string): TArray<string>;
+    function SplitPath(const AValue: string): TArray<string>;
 
     function MatchPath(
-      const Pattern: string;
-      const Path: string;
-      const Params: TDictionary<string, string>
+      const APattern: string;
+      const APath: string;
+      const AParams: TDictionary<string, string>
     ): Boolean;
 
     function InvokeRoute(
-      const Route: TRouteDescriptor;
-      const Request: THttpRequest
+      const ARoute: TRouteDescriptor;
+      const ARequest: THttpRequest
     ): THttpResponse;
 
   public
@@ -38,13 +38,13 @@ type
 
     destructor Destroy; override;
 
-    function Dispatch(const Request: THttpRequest): THttpResponse;
+    function Dispatch(const ARequest: THttpRequest): THttpResponse;
   end;
 
 implementation
 
 uses
-  Shared.AppExceptions,
+  AppExceptions,
   Http.Context;
 
 constructor TAttributeRouter.Create(
@@ -70,11 +70,11 @@ begin
   inherited;
 end;
 
-function TAttributeRouter.SplitPath(const Value: string): TArray<string>;
+function TAttributeRouter.SplitPath(const AValue: string): TArray<string>;
 var
   CleanValue: string;
 begin
-  CleanValue := Value.Trim(['/']);
+  CleanValue := AValue.Trim(['/']);
 
   if CleanValue = '' then
   begin
@@ -86,9 +86,9 @@ begin
 end;
 
 function TAttributeRouter.MatchPath(
-  const Pattern: string;
-  const Path: string;
-  const Params: TDictionary<string, string>
+  const APattern: string;
+  const APath: string;
+  const AParams: TDictionary<string, string>
 ): Boolean;
 var
   PatternParts: TArray<string>;
@@ -97,10 +97,10 @@ var
   PatternPart: string;
   ParamName: string;
 begin
-  Params.Clear;
+  AParams.Clear;
 
-  PatternParts := SplitPath(Pattern);
-  PathParts := SplitPath(Path);
+  PatternParts := SplitPath(APattern);
+  PathParts := SplitPath(APath);
 
   if Length(PatternParts) <> Length(PathParts) then
     Exit(False);
@@ -116,10 +116,10 @@ begin
       if ParamName = '' then
         raise Exception.CreateFmt(
           'Invalid route parameter in pattern "%s".',
-          [Pattern]
+          [APattern]
         );
 
-      Params.AddOrSetValue(ParamName, PathParts[I]);
+      AParams.AddOrSetValue(ParamName, PathParts[I]);
       Continue;
     end;
 
@@ -131,16 +131,16 @@ begin
 end;
 
 function TAttributeRouter.InvokeRoute(
-  const Route: TRouteDescriptor;
-  const Request: THttpRequest
+  const ARoute: TRouteDescriptor;
+  const ARequest: THttpRequest
 ): THttpResponse;
 var
   Context: THttpContext;
   ReturnValue: TValue;
 begin
-  Context := THttpContext.Create(Request);
+  Context := THttpContext.Create(ARequest);
   try
-    ReturnValue := FActionInvoker.Invoke(Route, Context);
+    ReturnValue := FActionInvoker.Invoke(ARoute, Context);
   finally
     Context.Free;
   end;
@@ -152,18 +152,18 @@ begin
 end;
 
 function TAttributeRouter.Dispatch(
-  const Request: THttpRequest
+  const ARequest: THttpRequest
 ): THttpResponse;
 var
   Route: TRouteDescriptor;
 begin
   for Route in FRoutes do
   begin
-    if not SameText(Route.Method, Request.Method) then
+    if not SameText(Route.Method, ARequest.Method) then
       Continue;
 
-    if MatchPath(Route.Path, Request.Path, Request.RouteParams) then
-      Exit(InvokeRoute(Route, Request));
+    if MatchPath(Route.Path, ARequest.Path, ARequest.RouteParams) then
+      Exit(InvokeRoute(Route, ARequest));
   end;
 
   Result := THttpResponse.Json(

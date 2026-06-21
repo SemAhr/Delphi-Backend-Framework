@@ -35,10 +35,7 @@ type
   public
     constructor Create;
 
-    class function Json(
-      const Body: string;
-      const StatusCode: Integer = 200
-    ): THttpResponse; static;
+    class function Json(const ABody: string; const AStatusCode: Integer = 200): THttpResponse; static;
 
     class function NoContent: THttpResponse; static;
 
@@ -54,6 +51,7 @@ implementation
 constructor THttpRequest.Create;
 begin
   inherited Create;
+
   FHeaders := TDictionary<string, string>.Create;
   FRouteParams := TDictionary<string, string>.Create;
   FQueryParams := TDictionary<string, string>.Create;
@@ -64,6 +62,7 @@ begin
   FHeaders.Free;
   FRouteParams.Free;
   FQueryParams.Free;
+
   inherited;
 end;
 
@@ -76,15 +75,14 @@ begin
   FContentType := 'application/json; charset=utf-8';
 end;
 
-class function THttpResponse.Json(
-  const Body: string;
-  const StatusCode: Integer
-): THttpResponse;
+
+{ TODO: this migth returns JSON or body typed }
+class function THttpResponse.Json(const ABody: string; const AStatusCode: Integer): THttpResponse;
 begin
   Result := THttpResponse.Create;
-  Result.StatusCode := StatusCode;
+  Result.StatusCode := AStatusCode;
   Result.ContentType := 'application/json; charset=utf-8';
-  Result.Body := Body;
+  Result.Body := ABody;
 end;
 
 class function THttpResponse.NoContent: THttpResponse;

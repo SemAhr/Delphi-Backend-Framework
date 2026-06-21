@@ -14,9 +14,9 @@ type
     FJsonValue: TJSONValue;
   public
     constructor Create(
-      const PropertyInfo: TRttiProperty;
-      const JsonFieldName: string;
-      const JsonValue: TJSONValue
+      const APropertyInfo: TRttiProperty;
+      const AJsonFieldName: string;
+      const AJsonValue: TJSONValue
     );
 
     property PropertyInfo: TRttiProperty read FPropertyInfo;
@@ -27,16 +27,16 @@ type
 implementation
 
 constructor TDtoValidationContext.Create(
-  const PropertyInfo: TRttiProperty;
-  const JsonFieldName: string;
-  const JsonValue: TJSONValue
+  const APropertyInfo: TRttiProperty;
+  const AJsonFieldName: string;
+  const AJsonValue: TJSONValue
 );
 begin
   inherited Create;
 
-  FPropertyInfo := PropertyInfo;
-  FJsonFieldName := JsonFieldName;
-  FJsonValue := JsonValue;
+  FPropertyInfo := APropertyInfo;
+  FJsonFieldName := AJsonFieldName;
+  FJsonValue := AJsonValue;
 end;
 
 end.

@@ -98,10 +98,10 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="Shared\Container\Shared.Container.Contract.pas"/>
-        <DCCReference Include="Shared\Exceptions\Shared.AppExceptions.pas"/>
-        <DCCReference Include="Shared\Exceptions\Shared.HttpExceptions.pas"/>
-        <DCCReference Include="Shared\Rtti\Shared.RttiAttribute.Helpers.pas"/>
+        <DCCReference Include="Shared\Container\Container.Contract.pas"/>
+        <DCCReference Include="Shared\Exceptions\AppExceptions.pas"/>
+        <DCCReference Include="Shared\Exceptions\HttpExceptions.pas"/>
+        <DCCReference Include="Shared\Rtti\RttiAttribute.Helpers.pas"/>
         <DCCReference Include="Dto\Attributes\Dto.Attributes.pas"/>
         <DCCReference Include="Dto\Binding\Dto.Binder.Contract.pas"/>
         <DCCReference Include="Dto\Binding\Dto.Binder.pas"/>
@@ -131,7 +131,7 @@
         <DCCReference Include="Http\Parameters\Http.ValueConverter.pas"/>
         <DCCReference Include="Http\Parameters\Http.BodyBinder.Contract.pas"/>
         <DCCReference Include="Http\Parameters\Http.ParameterBinder.Contract.pas"/>
-        <DCCReference Include="Http\Parameters\Http.JsonBodyBinder.pas"/>
+        <DCCReference Include="Http\Parameters\Http.BodyBinder.pas"/>
         <DCCReference Include="Http\Parameters\Http.ParameterBinder.pas"/>
         <DCCReference Include="Http\Http.Composition.pas"/>
         <BuildConfiguration Include="Base">

@@ -15,37 +15,31 @@ type
   private
     FBodyBinder: IHttpBodyBinder;
 
-    function BindFromContext(
-      const Context: THttpContext;
-      const Descriptor: TParameterDescriptor
-    ): TValue;
+    function FromContext(const AContext: THttpContext; const ADescriptor: TParameterDescriptor): TValue;
 
-    function BindFromRoute(
-      const Context: THttpContext;
-      const Descriptor: TParameterDescriptor
-    ): TValue;
+    function FromRoute(const AContext: THttpContext; const ADescriptor: TParameterDescriptor): TValue;
 
     function BindFromQuery(
-      const Context: THttpContext;
-      const Descriptor: TParameterDescriptor
+      const AContext: THttpContext;
+      const ADescriptor: TParameterDescriptor
     ): TValue;
 
-    function BindFromHeader(
-      const Context: THttpContext;
-      const Descriptor: TParameterDescriptor
+    function FromHeader(
+      const AContext: THttpContext;
+      const ADescriptor: TParameterDescriptor
     ): TValue;
 
-    function BindFromBody(
-      const Context: THttpContext;
-      const Descriptor: TParameterDescriptor
+    function FromBody(
+      const AContext: THttpContext;
+      const ADescriptor: TParameterDescriptor
     ): TValue;
 
   public
     constructor Create(const ABodyBinder: IHttpBodyBinder);
 
-    function Bind(
-      const Context: THttpContext;
-      const Descriptor: TParameterDescriptor
+    function Execute(
+      const AContext: THttpContext;
+      const ADescriptor: TParameterDescriptor
     ): TValue;
   end;
 
@@ -54,7 +48,7 @@ implementation
 uses
   Http.Parameter.Binding,
   Http.ValueConverter,
-  Shared.AppExceptions;
+  AppExceptions;
 
 constructor TParameterBinder.Create(const ABodyBinder: IHttpBodyBinder);
 begin
@@ -66,57 +60,57 @@ begin
   FBodyBinder := ABodyBinder;
 end;
 
-function TParameterBinder.Bind(
-  const Context: THttpContext;
-  const Descriptor: TParameterDescriptor
+function TParameterBinder.Execute(
+  const AContext: THttpContext;
+  const ADescriptor: TParameterDescriptor
 ): TValue;
 begin
-  case Descriptor.Source of
+  case ADescriptor.Source of
     psContext:
-      Exit(BindFromContext(Context, Descriptor));
+      Exit(FromContext(AContext, ADescriptor));
 
     psRoute:
-      Exit(BindFromRoute(Context, Descriptor));
+      Exit(FromRoute(AContext, ADescriptor));
 
     psQuery:
-      Exit(BindFromQuery(Context, Descriptor));
+      Exit(BindFromQuery(AContext, ADescriptor));
 
     psHeader:
-      Exit(BindFromHeader(Context, Descriptor));
+      Exit(FromHeader(AContext, ADescriptor));
 
     psBody:
-      Exit(BindFromBody(Context, Descriptor));
+      Exit(FromBody(AContext, ADescriptor));
   end;
 
   raise EBinderException.CreateFmt(
     'Unsupported binding source for parameter "%s".',
-    [Descriptor.Name]
+    [ADescriptor.Name]
   );
 end;
 
-function TParameterBinder.BindFromContext(
-  const Context: THttpContext;
-  const Descriptor: TParameterDescriptor
+function TParameterBinder.FromContext(
+  const AContext: THttpContext;
+  const ADescriptor: TParameterDescriptor
 ): TValue;
 begin
-  if Descriptor.ParameterType.Handle <> TypeInfo(THttpContext) then
+  if ADescriptor.ParameterType.Handle <> TypeInfo(THttpContext) then
     raise EBinderException.CreateFmt(
       'Parameter "%s" marked as FromContext must be THttpContext.',
-      [Descriptor.Name]
+      [ADescriptor.Name]
     );
 
-  Result := TValue.From<THttpContext>(Context);
+  Result := TValue.From<THttpContext>(AContext);
 end;
 
-function TParameterBinder.BindFromRoute(
-  const Context: THttpContext;
-  const Descriptor: TParameterDescriptor
+function TParameterBinder.FromRoute(
+  const AContext: THttpContext;
+  const ADescriptor: TParameterDescriptor
 ): TValue;
 var
   RawValue: string;
   ErrorMessage: string;
 begin
-  if not Context.Request.RouteParams.TryGetValue(Descriptor.SourceName, RawValue) then
+  if not AContext.Request.RouteParams.TryGetValue(ADescriptor.SourceName, RawValue) then
     raise EBinderException.CreateFmt(
       'Route parameter "%s" is required.',
       [Descriptor.SourceName]
@@ -135,8 +129,8 @@ begin
 end;
 
 function TParameterBinder.BindFromQuery(
-  const Context: THttpContext;
-  const Descriptor: TParameterDescriptor
+  const AContext: THttpContext;
+  const ADescriptor: TParameterDescriptor
 ): TValue;
 var
   RawValue: string;
@@ -160,9 +154,9 @@ begin
     );
 end;
 
-function TParameterBinder.BindFromHeader(
-  const Context: THttpContext;
-  const Descriptor: TParameterDescriptor
+function TParameterBinder.FromHeader(
+  const AContext: THttpContext;
+  const ADescriptor: TParameterDescriptor
 ): TValue;
 var
   RawValue: string;
@@ -189,9 +183,9 @@ begin
     );
 end;
 
-function TParameterBinder.BindFromBody(
-  const Context: THttpContext;
-  const Descriptor: TParameterDescriptor
+function TParameterBinder.FromBody(
+  const AContext: THttpContext;
+  const ADescriptor: TParameterDescriptor
 ): TValue;
 begin
   Result := FBodyBinder.BindBody(

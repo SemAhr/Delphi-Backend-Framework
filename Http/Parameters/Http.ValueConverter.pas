@@ -10,10 +10,10 @@ type
   TValueConverter = class
   public
     class function TryConvertString(
-      const RawValue: string;
-      const TargetType: TRttiType;
-      out Value: TValue;
-      out ErrorMessage: string
+      const ARawValue: string;
+      const ATargetType: TRttiType;
+      out AValue: TValue;
+      out AErrorMessage: string
     ): Boolean; static;
   end;
 
@@ -24,10 +24,10 @@ uses
   System.TypInfo;
 
 class function TValueConverter.TryConvertString(
-  const RawValue: string;
-  const TargetType: TRttiType;
-  out Value: TValue;
-  out ErrorMessage: string
+  const ARawValue: string;
+  const ATargetType: TRttiType;
+  out AValue: TValue;
+  out AErrorMessage: string
 ): Boolean;
 var
   IntValue: Integer;
@@ -38,117 +38,117 @@ var
   FormatSettings: TFormatSettings;
 begin
   Result := False;
-  Value := TValue.Empty;
-  ErrorMessage := '';
+  AValue := TValue.Empty;
+  AErrorMessage := '';
 
-  if TargetType = nil then
+  if ATargetType = nil then
   begin
-    ErrorMessage := 'target type is not available';
+    AErrorMessage := 'target type is not available';
     Exit;
   end;
 
   FormatSettings := TFormatSettings.Create;
   FormatSettings.DecimalSeparator := '.';
 
-  case TargetType.TypeKind of
+  case ATargetType.TypeKind of
     tkString, tkLString, tkWString, tkUString:
       begin
-        Value := TValue.From<string>(RawValue);
+        AValue := TValue.From<string>(ARawValue);
         Exit(True);
       end;
 
     tkInteger:
       begin
-        if not TryStrToInt(RawValue, IntValue) then
+        if not TryStrToInt(ARawValue, IntValue) then
         begin
-          ErrorMessage := 'must be a valid integer';
+          AErrorMessage := 'must be a valid integer';
           Exit;
         end;
 
-        Value := TValue.From<Integer>(IntValue);
+        AValue := TValue.From<Integer>(IntValue);
         Exit(True);
       end;
 
     tkInt64:
       begin
-        if not TryStrToInt64(RawValue, Int64Value) then
+        if not TryStrToInt64(ARawValue, Int64Value) then
         begin
-          ErrorMessage := 'must be a valid int64';
+          AErrorMessage := 'must be a valid int64';
           Exit;
         end;
 
-        Value := TValue.From<Int64>(Int64Value);
+        AValue := TValue.From<Int64>(Int64Value);
         Exit(True);
       end;
 
     tkFloat:
       begin
-        if TargetType.Handle = TypeInfo(TDateTime) then
+        if ATargetType.Handle = TypeInfo(TDateTime) then
         begin
           var DateValue: TDateTime;
 
-          if not TryISO8601ToDate(RawValue, DateValue, False) then
+          if not TryISO8601ToDate(ARawValue, DateValue, False) then
           begin
-            ErrorMessage := 'must be a valid ISO-8601 datetime';
+            AErrorMessage := 'must be a valid ISO-8601 datetime';
             Exit;
           end;
 
-          Value := TValue.From<TDateTime>(DateValue);
+          AValue := TValue.From<TDateTime>(DateValue);
           Exit(True);
         end;
 
-        if not TryStrToFloat(RawValue, DoubleValue, FormatSettings) then
+        if not TryStrToFloat(ARawValue, DoubleValue, FormatSettings) then
         begin
-          ErrorMessage := 'must be a valid number';
+          AErrorMessage := 'must be a valid number';
           Exit;
         end;
 
-        if TargetType.Handle = TypeInfo(Single) then
-          Value := TValue.From<Single>(DoubleValue)
-        else if TargetType.Handle = TypeInfo(Extended) then
-          Value := TValue.From<Extended>(DoubleValue)
-        else if TargetType.Handle = TypeInfo(Currency) then
-          Value := TValue.From<Currency>(DoubleValue)
+        if ATargetType.Handle = TypeInfo(Single) then
+          AValue := TValue.From<Single>(DoubleValue)
+        else if ATargetType.Handle = TypeInfo(Extended) then
+          AValue := TValue.From<Extended>(DoubleValue)
+        else if ATargetType.Handle = TypeInfo(Currency) then
+          AValue := TValue.From<Currency>(DoubleValue)
         else
-          Value := TValue.From<Double>(DoubleValue);
+          AValue := TValue.From<Double>(DoubleValue);
 
         Exit(True);
       end;
 
     tkEnumeration:
       begin
-        if TargetType.Handle = TypeInfo(Boolean) then
+        if ATargetType.Handle = TypeInfo(Boolean) then
         begin
-          if SameText(RawValue, 'true') or (RawValue = '1') then
+          if SameText(ARawValue, 'true') or (ARawValue = '1') then
           begin
-            Value := TValue.From<Boolean>(True);
+            AValue := TValue.From<Boolean>(True);
             Exit(True);
           end;
 
-          if SameText(RawValue, 'false') or (RawValue = '0') then
+          if SameText(ARawValue, 'false') or (ARawValue = '0') then
           begin
-            Value := TValue.From<Boolean>(False);
+            AValue := TValue.From<Boolean>(False);
             Exit(True);
           end;
 
-          ErrorMessage := 'must be a valid boolean';
+          AErrorMessage := 'must be a valid boolean';
           Exit;
         end;
 
-        EnumValue := GetEnumValue(TargetType.Handle, RawValue);
+        EnumValue := GetEnumValue(ATargetType.Handle, ARawValue);
 
         if EnumValue < 0 then
         begin
-          ErrorMessage := 'must be a valid enum value';
+          AErrorMessage := 'must be a valid enum value';
           Exit;
         end;
 
-        Value := TValue.FromOrdinal(TargetType.Handle, EnumValue);
+        AValue := TValue.FromOrdinal(ATargetType.Handle, EnumValue);
         Exit(True);
       end;
   end;
 
-  ErrorMessage := 'unsupported scalar parameter type';
+  AErrorMessage := 'unsupported scalar parameter type';
 end;
 
 end.

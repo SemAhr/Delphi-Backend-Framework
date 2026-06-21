@@ -11,7 +11,7 @@ uses
   Http.Router.Contract;
 
 type
-  TSimpleHttpServer = class
+  THttpServer = class
   private
     FServer: TIdHTTPServer;
     FRouter: IHttpRouter;
@@ -22,18 +22,12 @@ type
       AResponseInfo: TIdHTTPResponseInfo
     );
 
-    function BuildRequest(ARequestInfo: TIdHTTPRequestInfo): THttpRequest;
+    function BuildRequest(const ARequestInfo: TIdHTTPRequestInfo): THttpRequest;
 
-    procedure WriteResponse(
-      const Response: THttpResponse;
-      AResponseInfo: TIdHTTPResponseInfo
-    );
+    procedure WriteResponse(const AResponse: THttpResponse; const AResponseInfo: TIdHTTPResponseInfo);
 
   public
-    constructor Create(
-      const APort: Integer;
-      const ARouter: IHttpRouter
-    );
+    constructor Create(const APort: Integer; const ARouter: IHttpRouter);
 
     destructor Destroy; override;
 
@@ -45,12 +39,9 @@ implementation
 
 uses
   System.Classes,
-  Shared.AppExceptions;
+  AppExceptions;
 
-constructor TSimpleHttpServer.Create(
-  const APort: Integer;
-  const ARouter: IHttpRouter
-);
+constructor THttpServer.Create(const APort: Integer; const ARouter: IHttpRouter);
 begin
   inherited Create;
 
@@ -65,7 +56,7 @@ begin
   FServer.OnCommandOther := HandleCommand;
 end;
 
-destructor TSimpleHttpServer.Destroy;
+destructor THttpServer.Destroy;
 begin
   Stop;
   FServer.Free;
@@ -74,32 +65,27 @@ begin
   inherited;
 end;
 
-procedure TSimpleHttpServer.Start;
+procedure THttpServer.Start;
 begin
   FServer.Active := True;
 end;
 
-procedure TSimpleHttpServer.Stop;
+procedure THttpServer.Stop;
 begin
   if FServer.Active then
     FServer.Active := False;
 end;
 
-function TSimpleHttpServer.BuildRequest(
-  ARequestInfo: TIdHTTPRequestInfo
-): THttpRequest;
-var
-  I: Integer;
-  Name: string;
+function THttpServer.BuildRequest(const ARequestInfo: TIdHTTPRequestInfo): THttpRequest;
 begin
   Result := THttpRequest.Create;
 
   Result.Method := UpperCase(ARequestInfo.Command);
   Result.Path := ARequestInfo.Document;
 
-  for I := 0 to ARequestInfo.RawHeaders.Count - 1 do
+  for var I := 0 to ARequestInfo.RawHeaders.Count - 1 do
   begin
-    Name := ARequestInfo.RawHeaders.Names[I];
+    var Name := ARequestInfo.RawHeaders.Names[I];
 
     if Name <> '' then
       Result.Headers.AddOrSetValue(
@@ -108,9 +94,9 @@ begin
       );
   end;
 
-  for I := 0 to ARequestInfo.Params.Count - 1 do
+  for var I := 0 to ARequestInfo.Params.Count - 1 do
   begin
-    Name := ARequestInfo.Params.Names[I];
+    var Name := ARequestInfo.Params.Names[I];
 
     if Name <> '' then
       Result.QueryParams.AddOrSetValue(
@@ -133,14 +119,11 @@ begin
   end;
 end;
 
-procedure TSimpleHttpServer.WriteResponse(
-  const Response: THttpResponse;
-  AResponseInfo: TIdHTTPResponseInfo
-);
+procedure TSimpleHttpServer.WriteResponse(const AResponse: THttpResponse; const AResponseInfo: TIdHTTPResponseInfo);
 begin
-  AResponseInfo.ResponseNo := Response.StatusCode;
-  AResponseInfo.ContentType := Response.ContentType;
-  AResponseInfo.ContentText := Response.Body;
+  AResponseInfo.ResponseNo := AResponse.StatusCode;
+  AResponseInfo.ContentType := AResponse.ContentType;
+  AResponseInfo.ContentText := AResponse.Body;
 end;
 
 procedure TSimpleHttpServer.HandleCommand(
@@ -148,12 +131,9 @@ procedure TSimpleHttpServer.HandleCommand(
   ARequestInfo: TIdHTTPRequestInfo;
   AResponseInfo: TIdHTTPResponseInfo
 );
-var
-  Request: THttpRequest;
-  Response: THttpResponse;
 begin
-  Request := nil;
-  Response := nil;
+  var Request: THttpRequest := nil;
+  var Response: THttpResponse := nil;
 
   try
     try

@@ -27,12 +27,12 @@ type
   TActionMetadataFactory = class
   private
     function GetParameterSource(
-      const Parameter: TRttiParameter;
-      out SourceName: string
+      const AParameter: TRttiParameter;
+      out ASourceName: string
     ): TParameterSource;
 
   public
-    function CreateMetadata(const MethodInfo: TRttiMethod): TActionMetadata;
+    function CreateMetadata(const AMethodInfo: TRttiMethod): TActionMetadata;
   end;
 
 implementation
@@ -51,35 +51,35 @@ begin
 end;
 
 function TActionMetadataFactory.GetParameterSource(
-  const Parameter: TRttiParameter;
-  out SourceName: string
+  const AParameter: TRttiParameter;
+  out ASourceName: string
 ): TParameterSource;
 var
   Attr: TCustomAttribute;
 begin
   Result := psUnknown;
-  SourceName := '';
+  ASourceName := '';
 
-  for Attr in Parameter.GetAttributes do
+  for Attr in AParameter.GetAttributes do
   begin
     if Attr is FromContextAttribute then
       Exit(psContext);
 
     if Attr is FromRouteAttribute then
     begin
-      SourceName := FromRouteAttribute(Attr).Name;
+      ASourceName := FromRouteAttribute(Attr).Name;
       Exit(psRoute);
     end;
 
     if Attr is FromQueryAttribute then
     begin
-      SourceName := FromQueryAttribute(Attr).Name;
+      ASourceName := FromQueryAttribute(Attr).Name;
       Exit(psQuery);
     end;
 
     if Attr is FromHeaderAttribute then
     begin
-      SourceName := FromHeaderAttribute(Attr).Name;
+      ASourceName := FromHeaderAttribute(Attr).Name;
       Exit(psHeader);
     end;
 
@@ -89,7 +89,7 @@ begin
 end;
 
 function TActionMetadataFactory.CreateMetadata(
-  const MethodInfo: TRttiMethod
+  const AMethodInfo: TRttiMethod
 ): TActionMetadata;
 var
   RttiParams: TArray<TRttiParameter>;
@@ -98,7 +98,7 @@ var
   SourceName: string;
   Source: TParameterSource;
 begin
-  RttiParams := MethodInfo.GetParameters;
+  RttiParams := AMethodInfo.GetParameters;
   SetLength(Descriptors, Length(RttiParams));
 
   for Index := 0 to High(RttiParams) do
@@ -108,7 +108,7 @@ begin
     if Source = psUnknown then
       raise Exception.CreateFmt(
         'Parameter "%s" in method "%s" must have a binding attribute.',
-        [RttiParams[Index].Name, MethodInfo.Name]
+        [RttiParams[Index].Name, AMethodInfo.Name]
       );
 
     if SourceName = '' then
@@ -121,7 +121,7 @@ begin
     Descriptors[Index].ParameterType := RttiParams[Index].ParamType;
   end;
 
-  Result := TActionMetadata.Create(MethodInfo, Descriptors);
+  Result := TActionMetadata.Create(AMethodInfo, Descriptors);
 end;
 
 end.
