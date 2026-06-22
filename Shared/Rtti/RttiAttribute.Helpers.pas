@@ -9,14 +9,14 @@ uses
 type
   TRttiAttributeHelpers = class
   public
-    class function HasAttribute<T: TCustomAttribute>(const ARttiObject: TRttiObject): Boolean; static;
-    class function TryGetAttribute<T: TCustomAttribute>(const ARttiObject: TRttiObject; out AAttributeValue: T): Boolean; static;
-    class function GetAttributes<T: TCustomAttribute>(const ARttiObject: TRttiObject): TObjectList<T>; static;
-  end;
+    class function HasAttribute<T: TCustomAttribute>(const ARttiObject: TRttiObject) : Boolean; static;
+    class function TryGetAttribute<T: TCustomAttribute>(const ARttiObject: TRttiObject; out AAttributeValue: T) : Boolean; static;
+    class function GetAttributes<T: TCustomAttribute>(const ARttiObject: TRttiObject) : TObjectList<T>; static;
+end;
 
 implementation
 
-class function TRttiAttributeHelpers.HasAttribute<T>(const ARttiObject: TRttiObject): Boolean;
+class function TRttiAttributeHelpers.HasAttribute<T>(const ARttiObject: TRttiObject) : Boolean;
 var
   AttributeItem: TCustomAttribute;
 begin
@@ -30,7 +30,7 @@ begin
   Result := False;
 end;
 
-class function TRttiAttributeHelpers.TryGetAttribute<T>(const ARttiObject: TRttiObject; out AAttributeValue: T): Boolean;
+class function TRttiAttributeHelpers.TryGetAttribute<T>(const ARttiObject: TRttiObject; out AAttributeValue: T) : Boolean;
 var
   AttributeItem: TCustomAttribute;
 begin
@@ -45,13 +45,13 @@ begin
     begin
       AAttributeValue := T(AttributeItem);
       Exit(True);
-    end;
-  end;
+end;
+end;
 
   Result := False;
 end;
 
-class function TRttiAttributeHelpers.GetAttributes<T>(const ARttiObject: TRttiObject): TObjectList<T>;
+class function TRttiAttributeHelpers.GetAttributes<T>(const ARttiObject: TRttiObject) : TObjectList<T>;
 var
   AttributeItem: TCustomAttribute;
   Values: TObjectList<T>;
@@ -65,12 +65,11 @@ begin
     begin
       if AttributeItem is T then
         Values.Add(T(AttributeItem));
-    end;
+end;
 
     Result := Values;
   finally
     Values.Free;
-  end;
 end;
-
+end;
 end.

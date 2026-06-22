@@ -11,17 +11,15 @@ type
   TBodyBinder = class(TInterfacedObject, IHttpBodyBinder)
   private
     FDtoBinder: IDtoBinder;
-  public
+public
     constructor Create(const ADtoBinder: IDtoBinder);
-
-    function Execute(const ARawBody: string; const ATargetType: TRttiType): TValue;
-  end;
+function Execute(const ARawBody: string; const ATargetType: TRttiType): TValue;
+end;
 
 implementation
 
 uses
   AppExceptions;
-
 constructor TBodyBinder.Create(const ADtoBinder: IDtoBinder);
 begin
   inherited Create;
@@ -31,8 +29,7 @@ begin
 
   FDtoBinder := ADtoBinder;
 end;
-
-function TBodyBinder.Execute(const ARawBody: string; const ATargetType: TRttiType): TValue;
+function TBodyBinder.Execute(const ARawBody: string; const ATargetType: TRttiType) : TValue;
 var
   Dto: TObject;
 begin
@@ -47,5 +44,4 @@ begin
 
   TValue.Make(@Dto, ATargetType.Handle, Result);
 end;
-
 end.

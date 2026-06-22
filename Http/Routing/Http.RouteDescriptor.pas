@@ -15,7 +15,7 @@ type
     FControllerType: TRttiInstanceType;
     FMethodInfo: TRttiMethod;
     FParameters: TArray<TParameterDescriptor>;
-  public
+public
     constructor Create(
       const AMethod: string;
       const APath: string;
@@ -23,13 +23,12 @@ type
       const AMethodInfo: TRttiMethod;
       const AParameters: TArray<TParameterDescriptor>
     );
-
-    property Method: string read FMethod;
-    property Path: string read FPath;
-    property ControllerType: TRttiInstanceType read FControllerType;
-    property MethodInfo: TRttiMethod read FMethodInfo;
-    property Parameters: TArray<TParameterDescriptor> read FParameters;
-  end;
+property Method: string read FMethod;
+property Path: string read FPath;
+property ControllerType: TRttiInstanceType read FControllerType;
+property MethodInfo: TRttiMethod read FMethodInfo;
+property Parameters: TArray<TParameterDescriptor> read FParameters;
+end;
 
 implementation
 
@@ -48,5 +47,4 @@ begin
   FMethodInfo := AMethodInfo;
   FParameters := AParameters;
 end;
-
 end.

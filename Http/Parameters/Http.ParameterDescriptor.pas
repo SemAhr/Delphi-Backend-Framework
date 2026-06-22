@@ -14,7 +14,7 @@ type
     SourceName: string;
     RttiParameter: TRttiParameter;
     ParameterType: TRttiType;
-  end;
+end;
 
 implementation
 

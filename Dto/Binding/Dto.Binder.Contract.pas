@@ -10,7 +10,7 @@ type
       const ADtoClass: TClass;
       out ADto: TObject
     );
-  end;
+end;
 
 implementation
 

@@ -14,8 +14,8 @@ type
       const ATargetType: TRttiType;
       out AValue: TValue;
       out AErrorMessage: string
-    ): Boolean; static;
-  end;
+    ) : Boolean; static;
+end;
 
 implementation
 
@@ -28,7 +28,7 @@ class function TValueConverter.TryConvertString(
   const ATargetType: TRttiType;
   out AValue: TValue;
   out AErrorMessage: string
-): Boolean;
+) : Boolean;
 var
   IntValue: Integer;
   Int64Value: Int64;
@@ -45,7 +45,7 @@ begin
   begin
     AErrorMessage := 'target type is not available';
     Exit;
-  end;
+end;
 
   FormatSettings := TFormatSettings.Create;
   FormatSettings.DecimalSeparator := '.';
@@ -55,7 +55,7 @@ begin
       begin
         AValue := TValue.From<string>(ARawValue);
         Exit(True);
-      end;
+end;
 
     tkInteger:
       begin
@@ -63,11 +63,11 @@ begin
         begin
           AErrorMessage := 'must be a valid integer';
           Exit;
-        end;
+end;
 
         AValue := TValue.From<Integer>(IntValue);
         Exit(True);
-      end;
+end;
 
     tkInt64:
       begin
@@ -75,11 +75,11 @@ begin
         begin
           AErrorMessage := 'must be a valid int64';
           Exit;
-        end;
+end;
 
         AValue := TValue.From<Int64>(Int64Value);
         Exit(True);
-      end;
+end;
 
     tkFloat:
       begin
@@ -91,17 +91,17 @@ begin
           begin
             AErrorMessage := 'must be a valid ISO-8601 datetime';
             Exit;
-          end;
+end;
 
           AValue := TValue.From<TDateTime>(DateValue);
           Exit(True);
-        end;
+end;
 
         if not TryStrToFloat(ARawValue, DoubleValue, FormatSettings) then
         begin
           AErrorMessage := 'must be a valid number';
           Exit;
-        end;
+end;
 
         if ATargetType.Handle = TypeInfo(Single) then
           AValue := TValue.From<Single>(DoubleValue)
@@ -113,7 +113,7 @@ begin
           AValue := TValue.From<Double>(DoubleValue);
 
         Exit(True);
-      end;
+end;
 
     tkEnumeration:
       begin
@@ -123,17 +123,17 @@ begin
           begin
             AValue := TValue.From<Boolean>(True);
             Exit(True);
-          end;
+end;
 
           if SameText(ARawValue, 'false') or (ARawValue = '0') then
           begin
             AValue := TValue.From<Boolean>(False);
             Exit(True);
-          end;
+end;
 
           AErrorMessage := 'must be a valid boolean';
           Exit;
-        end;
+end;
 
         EnumValue := GetEnumValue(ATargetType.Handle, ARawValue);
 
@@ -141,14 +141,13 @@ begin
         begin
           AErrorMessage := 'must be a valid enum value';
           Exit;
-        end;
+end;
 
         AValue := TValue.FromOrdinal(ATargetType.Handle, EnumValue);
         Exit(True);
-      end;
-  end;
+end;
+end;
 
   AErrorMessage := 'unsupported scalar parameter type';
 end;
-
 end.

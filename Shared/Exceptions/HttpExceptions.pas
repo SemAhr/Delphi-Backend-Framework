@@ -13,81 +13,115 @@ type
     FErrorName: string;
     FMessages: TArray<string>;
     FCause: Exception;
-  public
+public
     constructor Create(
       const AStatusCode: Integer;
       const AErrorName: string;
       const AMessageText: string;
       const ACause: Exception = nil
     ); overload;
-
-    constructor Create(
+constructor Create(
       const AStatusCode: Integer;
       const AErrorName: string;
       const AMessageList: TArray<string>;
       const ACause: Exception = nil
     ); overload;
-
-    property StatusCode: Integer read FStatusCode;
-    property ErrorName: string read FErrorName;
-    property Messages: TArray<string> read FMessages;
-    property Cause: Exception read FCause;
-  end;
+property StatusCode: Integer read FStatusCode;
+property ErrorName: string read FErrorName;
+property Messages: TArray<string> read FMessages;
+property Cause: Exception read FCause;
+end;
 
   EBadRequestException = class(EHttpException)
   public
-    constructor Create(const AMessageText: string = 'Bad Request'; const ACause: Exception = nil; const AErrorName: string = 'Bad Request'); overload;
-    constructor Create(const AMessages: TArray<string>; const ACause: Exception = nil; const AErrorName: string = 'Bad Request'); overload;
-  end;
+    constructor Create(
+      const AMessageText: string = 'Bad Request';
+      const ACause: Exception = nil;
+      const AErrorName: string = 'Bad Request'
+    ); overload;
+constructor Create(
+      const AMessages: TArray<string>;
+      const ACause: Exception = nil;
+      const AErrorName: string = 'Bad Request'
+    ); overload;
+end;
 
   EUnauthorizedException = class(EHttpException)
   public
-    constructor Create(const AMessageText: string = 'Unauthorized'; const ACause: Exception = nil; const AErrorName: string = 'Unauthorized');
-  end;
+    constructor Create(
+      const AMessageText: string = 'Unauthorized';
+      const ACause: Exception = nil;
+      const AErrorName: string = 'Unauthorized'
+    );
+end;
 
   EForbiddenException = class(EHttpException)
   public
-    constructor Create(const AMessageText: string = 'Forbidden'; const ACause: Exception = nil; const AErrorName: string = 'Forbidden');
-  end;
+    constructor Create(
+      const AMessageText: string = 'Forbidden';
+      const ACause: Exception = nil;
+      const AErrorName: string = 'Forbidden'
+    );
+end;
 
   ENotFoundException = class(EHttpException)
   public
-    constructor Create(const AMessageText: string = 'Not Found'; const ACause: Exception = nil; const AErrorName: string = 'Not Found');
-  end;
+    constructor Create(
+      const AMessageText: string = 'Not Found';
+      const ACause: Exception = nil;
+      const AErrorName: string = 'Not Found'
+    );
+end;
 
   EConflictException = class(EHttpException)
   public
-    constructor Create(const AMessageText: string = 'Conflict'; const ACause: Exception = nil; const AErrorName: string = 'Conflict');
-  end;
+    constructor Create(
+      const AMessageText: string = 'Conflict';
+      const ACause: Exception = nil;
+      const AErrorName: string = 'Conflict'
+    );
+end;
 
   EInternalServerErrorException = class(EHttpException)
   public
-    constructor Create(const AMessageText: string = 'Internal Server Error'; const ACause: Exception = nil; const AErrorName: string = 'Internal Server Error');
-  end;
+    constructor Create(
+      const AMessageText: string = 'Internal Server Error';
+      const ACause: Exception = nil;
+      const AErrorName: string = 'Internal Server Error'
+    );
+end;
 
   EBadGatewayException = class(EHttpException)
   public
-    constructor Create(const AMessageText: string = 'Bad Gateway'; const ACause: Exception = nil; const AErrorName: string = 'Bad Gateway');
-  end;
+    constructor Create(
+      const AMessageText: string = 'Bad Gateway';
+      const ACause: Exception = nil;
+      const AErrorName: string = 'Bad Gateway'
+    );
+end;
 
   EServiceUnavailableException = class(EHttpException)
   public
-    constructor Create(const AMessageText: string = 'Service Unavailable'; const ACause: Exception = nil; const AErrorName: string = 'Service Unavailable');
-  end;
-
+    constructor Create(
+      const AMessageText: string = 'Service Unavailable';
+      const ACause: Exception = nil;
+      const AErrorName: string = 'Service Unavailable'
+    );
+end;
 function BuildHttpExceptionJson(
   const AStatusCode: Integer;
   const AErrorName: string;
   const AMessages: TArray<string>
-): string;
-
-implementation
+) : string; implementation
 
 uses
   System.JSON,
   System.StrUtils ;
-
-function BuildHttpExceptionJson(const AStatusCode: Integer; const AErrorName: string; const AMessages: TArray<string>): string;
+function BuildHttpExceptionJson(
+  const AStatusCode: Integer;
+  const AErrorName: string;
+  const AMessages: TArray<string>
+) : string;
 var
   ResponseMessages: TArray<string>;
 begin
@@ -102,9 +136,8 @@ begin
     begin
       JsonObject.AddPair('message', ResponseMessages[0]);
       Exit(JsonObject.ToJSON);
-    end;
-
-    var JsonMessages := TJSONArray.Create;
+end;
+var JsonMessages := TJSONArray.Create;
     try
       for var Index := 0 to High(ResponseMessages) do
         JsonMessages.Add(ResponseMessages[Index]);
@@ -113,12 +146,12 @@ begin
       JsonMessages := nil;
     finally
       JsonMessages.Free;
-    end;
+end;
 
     Result := JsonObject.ToJSON;
   finally
     JsonObject.Free;
-  end;
+end;
 end;
 
 { EHttpException }
@@ -136,7 +169,6 @@ begin
   FMessages := [AMessageText];
   FCause := ACause;
 end;
-
 constructor EHttpException.Create(
   const AStatusCode: Integer;
   const AErrorName: string;
@@ -153,49 +185,76 @@ end;
 
 { Derived }
 
-constructor EBadRequestException.Create(const AMessageText: string; const ACause: Exception; const AErrorName: string);
+constructor EBadRequestException.Create(
+  const AMessageText: string;
+  const ACause: Exception;
+  const AErrorName: string
+);
 begin
   inherited Create(400, AErrorName, AMessageText, ACause);
 end;
-
-constructor EBadRequestException.Create(const AMessages: TArray<string>; const ACause: Exception; const AErrorName: string);
+constructor EBadRequestException.Create(
+  const AMessages: TArray<string>;
+  const ACause: Exception;
+  const AErrorName: string
+);
 begin
   inherited Create(400, AErrorName, AMessages, ACause);
 end;
-
-constructor EUnauthorizedException.Create(const AMessageText: string; const ACause: Exception; const AErrorName: string);
+constructor EUnauthorizedException.Create(
+  const AMessageText: string;
+  const ACause: Exception;
+  const AErrorName: string
+);
 begin
   inherited Create(401, AErrorName, AMessageText, ACause);
 end;
-
-constructor EForbiddenException.Create(const AMessageText: string; const ACause: Exception; const AErrorName: string);
+constructor EForbiddenException.Create(
+  const AMessageText: string;
+  const ACause: Exception;
+  const AErrorName: string
+);
 begin
   inherited Create(403, AErrorName, AMessageText, ACause);
 end;
-
-constructor ENotFoundException.Create(const AMessageText: string; const ACause: Exception; const AErrorName: string);
+constructor ENotFoundException.Create(
+  const AMessageText: string;
+  const ACause: Exception;
+  const AErrorName: string
+);
 begin
   inherited Create(404, AErrorName, AMessageText, ACause);
 end;
-
-constructor EConflictException.Create(const AMessageText: string; const ACause: Exception; const AErrorName: string);
+constructor EConflictException.Create(
+  const AMessageText: string;
+  const ACause: Exception;
+  const AErrorName: string
+);
 begin
   inherited Create(409, AErrorName, AMessageText, ACause);
 end;
-
-constructor EInternalServerErrorException.Create(const AMessageText: string; const ACause: Exception; const AErrorName: string);
+constructor EInternalServerErrorException.Create(
+  const AMessageText: string;
+  const ACause: Exception;
+  const AErrorName: string
+);
 begin
   inherited Create(500, AErrorName, AMessageText, ACause);
 end;
-
-constructor EBadGatewayException.Create(const AMessageText: string; const ACause: Exception; const AErrorName: string);
+constructor EBadGatewayException.Create(
+  const AMessageText: string;
+  const ACause: Exception;
+  const AErrorName: string
+);
 begin
   inherited Create(502, AErrorName, AMessageText, ACause);
 end;
-
-constructor EServiceUnavailableException.Create(const AMessageText: string; const ACause: Exception; const AErrorName: string);
+constructor EServiceUnavailableException.Create(
+  const AMessageText: string;
+  const ACause: Exception;
+  const AErrorName: string
+);
 begin
   inherited Create(503, AErrorName, AMessageText, ACause);
 end;
-
 end.

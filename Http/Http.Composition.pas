@@ -12,14 +12,14 @@ uses
 type
   THttpComposition = class sealed
   public
-    class function CreateDefaultRouter(const ARoutes: TObjectList<TRouteDescriptor>; const AContainer: IContainer): IHttpRouter; static;
+    class function CreateDefaultRouter(const ARoutes: TObjectList<TRouteDescriptor>; const AContainer: IContainer) : IHttpRouter; static;
 
     class function CreateDefaultServer(
       const APort: Integer;
       const ARoutes: TObjectList<TRouteDescriptor>;
       const AContainer: IContainer
-    ): THttpServer; static;
-  end;
+    ) : THttpServer; static;
+end;
 
 implementation
 
@@ -34,12 +34,12 @@ uses
   Http.ParameterBinder,
   Http.ParameterBinder.Contract;
 
-class function THttpComposition.CreateDefaultRouter(const ARoutes: TObjectList<TRouteDescriptor>; const AContainer: IContainer): IHttpRouter;
+class function THttpComposition.CreateDefaultRouter(const ARoutes: TObjectList<TRouteDescriptor>; const AContainer: IContainer) : IHttpRouter;
 begin
   var DtoBinder := TDtoBinder.Create;
-  var BodyBinder := TJsonBodyBinder.Create(DtoBinder);
-  var ParameterBinder := TParameterBinder.Create(BodyBinder);
-  var ActionInvoker := TControllerActionInvoker.Create(AContainer, ParameterBinder);
+var BodyBinder := TJsonBodyBinder.Create(DtoBinder);
+var ParameterBinder := TParameterBinder.Create(BodyBinder);
+var ActionInvoker := TControllerActionInvoker.Create(AContainer, ParameterBinder);
 
   Result := TAttributeRouter.Create(ARoutes, ActionInvoker);
 end;
@@ -48,12 +48,11 @@ class function THttpComposition.CreateDefaultServer(
   const APort: Integer;
   const ARoutes: TObjectList<TRouteDescriptor>;
   const AContainer: IContainer
-): THttpServer;
+) : THttpServer;
 begin
   Result := THttpServer.Create(
     APort,
     THttpComposition.CreateDefaultRouter(ARoutes, AContainer)
   );
 end;
-
 end.

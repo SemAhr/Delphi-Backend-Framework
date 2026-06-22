@@ -9,17 +9,17 @@ uses
 type
   TDtoTypeInspector = class
   public
-    class function IsStringType(const APropertyInfo: TRttiProperty): Boolean; static;
-    class function IsBooleanType(const APropertyInfo: TRttiProperty): Boolean; static;
-    class function IsIntegerType(const APropertyInfo: TRttiProperty): Boolean; static;
-    class function IsInt64Type(const APropertyInfo: TRttiProperty): Boolean; static;
-    class function IsCurrencyType(const APropertyInfo: TRttiProperty): Boolean; static;
-    class function IsDateOnlyType(const APropertyInfo: TRttiProperty): Boolean; static;
-    class function IsDateLikeType(const APropertyInfo: TRttiProperty): Boolean; static;
-    class function IsNumericType(const APropertyInfo: TRttiProperty): Boolean; static;
+    class function IsStringType(const APropertyInfo: TRttiProperty) : Boolean; static;
+    class function IsBooleanType(const APropertyInfo: TRttiProperty) : Boolean; static;
+    class function IsIntegerType(const APropertyInfo: TRttiProperty) : Boolean; static;
+    class function IsInt64Type(const APropertyInfo: TRttiProperty) : Boolean; static;
+    class function IsCurrencyType(const APropertyInfo: TRttiProperty) : Boolean; static;
+    class function IsDateOnlyType(const APropertyInfo: TRttiProperty) : Boolean; static;
+    class function IsDateLikeType(const APropertyInfo: TRttiProperty) : Boolean; static;
+    class function IsNumericType(const APropertyInfo: TRttiProperty) : Boolean; static;
 
-    class function GetDateTypeMessage(const APropertyInfo: TRttiProperty): string; static;
-  end;
+    class function GetDateTypeMessage(const APropertyInfo: TRttiProperty) : string; static;
+end;
 
 implementation
 
@@ -28,9 +28,7 @@ uses
   RttiAttribute.Helpers,
   Dto.Attributes;
 
-class function TDtoTypeInspector.IsStringType(
-  const APropertyInfo: TRttiProperty
-): Boolean;
+class function TDtoTypeInspector.IsStringType(const APropertyInfo: TRttiProperty) : Boolean;
 begin
   Result := APropertyInfo.PropertyType.TypeKind in [
     tkString,
@@ -40,48 +38,36 @@ begin
   ];
 end;
 
-class function TDtoTypeInspector.IsBooleanType(
-  const APropertyInfo: TRttiProperty
-): Boolean;
+class function TDtoTypeInspector.IsBooleanType(const APropertyInfo: TRttiProperty) : Boolean;
 begin
   Result :=
     (APropertyInfo.PropertyType.TypeKind = tkEnumeration) and
     (APropertyInfo.PropertyType.Handle = TypeInfo(Boolean));
 end;
 
-class function TDtoTypeInspector.IsIntegerType(
-  const APropertyInfo: TRttiProperty
-): Boolean;
+class function TDtoTypeInspector.IsIntegerType(const APropertyInfo: TRttiProperty) : Boolean;
 begin
   Result := APropertyInfo.PropertyType.TypeKind = tkInteger;
 end;
 
-class function TDtoTypeInspector.IsInt64Type(
-  const APropertyInfo: TRttiProperty
-): Boolean;
+class function TDtoTypeInspector.IsInt64Type(const APropertyInfo: TRttiProperty) : Boolean;
 begin
   Result := APropertyInfo.PropertyType.TypeKind = tkInt64;
 end;
 
-class function TDtoTypeInspector.IsCurrencyType(
-  const APropertyInfo: TRttiProperty
-): Boolean;
+class function TDtoTypeInspector.IsCurrencyType(const APropertyInfo: TRttiProperty) : Boolean;
 begin
   Result := APropertyInfo.PropertyType.Handle = TypeInfo(Currency);
 end;
 
-class function TDtoTypeInspector.IsDateOnlyType(
-  const APropertyInfo: TRttiProperty
-): Boolean;
+class function TDtoTypeInspector.IsDateOnlyType(const APropertyInfo: TRttiProperty) : Boolean;
 begin
   Result :=
     TRttiAttributeHelpers.HasAttribute<IsDateAttribute>(APropertyInfo) or
     (APropertyInfo.PropertyType.Handle = TypeInfo(TDate));
 end;
 
-class function TDtoTypeInspector.IsDateLikeType(
-  const APropertyInfo: TRttiProperty
-): Boolean;
+class function TDtoTypeInspector.IsDateLikeType(const APropertyInfo: TRttiProperty) : Boolean;
 begin
   Result :=
     (APropertyInfo.PropertyType.TypeKind = tkFloat) and
@@ -94,9 +80,7 @@ begin
     );
 end;
 
-class function TDtoTypeInspector.IsNumericType(
-  const APropertyInfo: TRttiProperty
-): Boolean;
+class function TDtoTypeInspector.IsNumericType(const APropertyInfo: TRttiProperty) : Boolean;
 begin
   Result :=
     IsIntegerType(APropertyInfo) or
@@ -108,14 +92,11 @@ begin
     );
 end;
 
-class function TDtoTypeInspector.GetDateTypeMessage(
-  const APropertyInfo: TRttiProperty
-): string;
+class function TDtoTypeInspector.GetDateTypeMessage(const APropertyInfo: TRttiProperty) : string;
 begin
   if IsDateOnlyType(APropertyInfo) then
     Exit('must be a date');
 
   Result := 'must be a datetime';
 end;
-
 end.

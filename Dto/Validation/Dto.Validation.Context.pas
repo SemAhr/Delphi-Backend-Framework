@@ -12,17 +12,16 @@ type
     FPropertyInfo: TRttiProperty;
     FJsonFieldName: string;
     FJsonValue: TJSONValue;
-  public
+public
     constructor Create(
       const APropertyInfo: TRttiProperty;
       const AJsonFieldName: string;
       const AJsonValue: TJSONValue
     );
-
-    property PropertyInfo: TRttiProperty read FPropertyInfo;
-    property JsonFieldName: string read FJsonFieldName;
-    property JsonValue: TJSONValue read FJsonValue;
-  end;
+property PropertyInfo: TRttiProperty read FPropertyInfo;
+property JsonFieldName: string read FJsonFieldName;
+property JsonValue: TJSONValue read FJsonValue;
+end;
 
 implementation
 
@@ -38,5 +37,4 @@ begin
   FJsonFieldName := AJsonFieldName;
   FJsonValue := AJsonValue;
 end;
-
 end.

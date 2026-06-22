@@ -12,73 +12,62 @@ type
   TDtoBindingContext = record
   private
     FErrors: TList<string>;
-  public
+public
     class function Create: TDtoBindingContext; static;
-
-    procedure Release;
-
-    function ErrorCount: Integer;
-
-    procedure AddError(const APropertyPath: string; const AMessage: string);
-    procedure AddErrors(const APropertyPath: string; const AMessages: TArray<string>);
-
-    procedure RaiseIfHasErrors;
-  end;
+procedure Release;
+function ErrorCount: Integer;
+procedure AddError(const APropertyPath: string; const AMessage: string);
+procedure AddErrors(const APropertyPath: string; const AMessages: TArray<string>);
+procedure RaiseIfHasErrors;
+end;
 
   TDtoBinder = class(TInterfacedObject, IDtoBinder)
   private
     procedure BindObject(
       const AJsonObject: TJSONObject;
       const AInstance: TObject;
-      var ABindingContext: TDtoBindingContext
+var ABindingContext: TDtoBindingContext
     );
-
-    function TryParseJsonValue(
+function TryParseJsonValue(
       const AJsonValue: TJSONValue;
       const ATargetType: TRttiType;
       const APropertyPath: string;
-      var ABindingContext: TDtoBindingContext;
+var ABindingContext: TDtoBindingContext;
       out AParsedValue: TValue;
       out AErrorMessage: string
     ): Boolean;
-
-    function TryParseScalarJsonValue(
+function TryParseScalarJsonValue(
       const AJsonValue: TJSONValue;
       const ATargetType: TRttiType;
       const APropertyPath: string;
       out AParsedValue: TValue;
       out AErrorMessage: string
-    ): Boolean;
-
-    function TryParseJsonArray(
+    ) : Boolean;
+function TryParseJsonArray(
       const AJsonArray: TJSONArray;
       const ATargetType: TRttiType;
       const APropertyPath: string;
-      var ABindingContext: TDtoBindingContext;
+var ABindingContext: TDtoBindingContext;
       out AParsedValue: TValue;
       out AErrorMessage: string
     ): Boolean;
-
-    function TryParseJsonObject(
+function TryParseJsonObject(
       const AJsonObject: TJSONObject;
       const ATargetType: TRttiType;
       const APropertyPath: string;
-      var ABindingContext: TDtoBindingContext;
+var ABindingContext: TDtoBindingContext;
       out AParsedValue: TValue;
       out AErrorMessage: string
-    ): Boolean;
-
-  public
+    ) : Boolean;
+public
     constructor Create;
-
-    procedure ParseDto(
+procedure ParseDto(
       const ARawBody: string;
       const ADtoClass: TClass;
       out ADto: TObject
     ); overload;
-
-    function ParseDto<T: class>(const ARawBody: string): T; overload;
-  end;
+function ParseDto<T: class>(const ARawBody: string) : T; overload;
+end;
 
 implementation
 
@@ -102,13 +91,11 @@ class function TDtoBindingContext.Create: TDtoBindingContext;
 begin
   Result.FErrors := TList<string>.Create;
 end;
-
 procedure TDtoBindingContext.Release;
 begin
   FErrors.Free;
   FErrors := nil;
 end;
-
 function TDtoBindingContext.ErrorCount: Integer;
 begin
   if FErrors = nil then
@@ -116,7 +103,6 @@ begin
 
   Result := FErrors.Count;
 end;
-
 procedure TDtoBindingContext.AddError(const APropertyPath: string; const AMessage: string);
 begin
   if FErrors = nil then
@@ -124,16 +110,11 @@ begin
 
   FErrors.Add(APropertyPath + ' ' + AMessage);
 end;
-
-procedure TDtoBindingContext.AddErrors(
-  const APropertyPath: string;
-  const AMessages: TArray<string>
-);
+procedure TDtoBindingContext.AddErrors(const APropertyPath: string; const AMessages: TArray<string>);
 begin
   for var Message in AMessages do
     AddError(APropertyPath, Message);
 end;
-
 procedure TDtoBindingContext.RaiseIfHasErrors;
 begin
   if ErrorCount = 0 then
@@ -148,11 +129,10 @@ constructor TDtoBinder.Create;
 begin
   inherited Create;
 end;
-
 procedure TDtoBinder.BindObject(
   const AJsonObject: TJSONObject;
   const AInstance: TObject;
-  var ABindingContext: TDtoBindingContext
+var ABindingContext: TDtoBindingContext
 );
 var
   RttiContext: TRttiContext;
@@ -172,9 +152,8 @@ begin
   begin
     if not PropertyItem.IsWritable then
       Continue;
-
-    var JsonFieldName := TDtoMetadata.GetJsonFieldName(PropertyItem);
-    var JsonValue := AJsonObject.Values[JsonFieldName];
+var JsonFieldName := TDtoMetadata.GetJsonFieldName(PropertyItem);
+var JsonValue := AJsonObject.Values[JsonFieldName];
 
     if not TDtoRequiredValidator.TryValidate(
       PropertyItem,
@@ -184,12 +163,11 @@ begin
     begin
       ABindingContext.AddError(JsonFieldName, PresenceErrorMessage);
       Continue;
-    end;
+end;
 
     if JsonValue = nil then
       Continue;
-
-    var ValidationContext := TDtoValidationContext.Create(
+var ValidationContext := TDtoValidationContext.Create(
       PropertyItem,
       JsonFieldName,
       JsonValue
@@ -202,7 +180,7 @@ begin
           PropertyItem.SetValue(AInstance, ParsedValue)
         else
           ABindingContext.AddErrors(JsonFieldName, ErrorMessages);
-      end
+end
 
       else if TDtoTypeInspector.IsBooleanType(PropertyItem) then
       begin
@@ -210,7 +188,7 @@ begin
           PropertyItem.SetValue(AInstance, ParsedValue)
         else
           ABindingContext.AddErrors(JsonFieldName, ErrorMessages);
-      end
+end
 
       else if TDtoTypeInspector.IsStringType(PropertyItem) then
       begin
@@ -218,7 +196,7 @@ begin
           PropertyItem.SetValue(AInstance, ParsedValue)
         else
           ABindingContext.AddErrors(JsonFieldName, ErrorMessages);
-      end
+end
 
       else if TDtoTypeInspector.IsNumericType(PropertyItem) then
       begin
@@ -226,7 +204,7 @@ begin
           PropertyItem.SetValue(AInstance, ParsedValue)
         else
           ABindingContext.AddErrors(JsonFieldName, ErrorMessages);
-      end
+end
 
       else
       begin
@@ -241,24 +219,23 @@ begin
         begin
           if not ParsedValue.IsEmpty then
             PropertyItem.SetValue(AInstance, ParsedValue);
-        end
+end
         else
           ABindingContext.AddError(JsonFieldName, ErrorMessage);
-      end;
+end;
     finally
       ValidationContext.Free;
-    end;
-  end;
 end;
-
+end;
+end;
 function TDtoBinder.TryParseJsonValue(
   const AJsonValue: TJSONValue;
   const ATargetType: TRttiType;
   const APropertyPath: string;
-  var ABindingContext: TDtoBindingContext;
+var ABindingContext: TDtoBindingContext;
   out AParsedValue: TValue;
   out AErrorMessage: string
-): Boolean;
+) : Boolean;
 begin
   Result := False;
   ParsedValue := TValue.Empty;
@@ -268,13 +245,13 @@ begin
   begin
     ErrorMessage := 'is required';
     Exit;
-  end;
+end;
 
   if TargetType = nil then
   begin
     ErrorMessage := 'has unsupported target type';
     Exit;
-  end;
+end;
 
   case TargetType.TypeKind of
     tkClass:
@@ -283,7 +260,7 @@ begin
         begin
           ErrorMessage := 'must be a JSON object';
           Exit;
-        end;
+end;
 
         Exit(TryParseJsonObject(
           TJSONObject(JsonValue),
@@ -293,7 +270,7 @@ begin
           ParsedValue,
           ErrorMessage
         ));
-      end;
+end;
 
     tkDynArray:
       begin
@@ -301,7 +278,7 @@ begin
         begin
           ErrorMessage := 'must be a JSON array';
           Exit;
-        end;
+end;
 
         Exit(TryParseJsonArray(
           TJSONArray(JsonValue),
@@ -311,7 +288,7 @@ begin
           ParsedValue,
           ErrorMessage
         ));
-      end;
+end;
 
     tkString, tkLString, tkWString, tkUString,
     tkInteger, tkInt64, tkFloat, tkEnumeration:
@@ -323,19 +300,18 @@ begin
           ParsedValue,
           ErrorMessage
         ));
-      end;
-  end;
+end;
+end;
 
   ErrorMessage := 'has an unsupported type for strict binding';
 end;
-
 function TDtoBinder.TryParseScalarJsonValue(
   const AJsonValue: TJSONValue;
   const ATargetType: TRttiType;
   const APropertyPath: string;
   out AParsedValue: TValue;
   out AErrorMessage: string
-): Boolean;
+) : Boolean;
 var
   NumericText: string;
   IntegerValue: Integer;
@@ -351,13 +327,13 @@ begin
   begin
     ErrorMessage := 'is required';
     Exit;
-  end;
+end;
 
   if TargetType = nil then
   begin
     ErrorMessage := 'has unsupported target type';
     Exit;
-  end;
+end;
 
   FormatSettings := TFormatSettings.Create;
   FormatSettings.DecimalSeparator := '.';
@@ -369,11 +345,11 @@ begin
         begin
           ErrorMessage := 'must be a string';
           Exit;
-        end;
+end;
 
         ParsedValue := TValue.From<string>(JsonValue.Value);
         Exit(True);
-      end;
+end;
 
     tkInteger:
       begin
@@ -381,17 +357,17 @@ begin
         begin
           ErrorMessage := 'must be an integer';
           Exit;
-        end;
+end;
 
         if not TryStrToInt(JsonValue.Value, IntegerValue) then
         begin
           ErrorMessage := 'must be a valid integer';
           Exit;
-        end;
+end;
 
         ParsedValue := TValue.From<Integer>(IntegerValue);
         Exit(True);
-      end;
+end;
 
     tkInt64:
       begin
@@ -399,17 +375,17 @@ begin
         begin
           ErrorMessage := 'must be an int64';
           Exit;
-        end;
+end;
 
         if not TryStrToInt64(JsonValue.Value, Int64Value) then
         begin
           ErrorMessage := 'must be a valid int64';
           Exit;
-        end;
+end;
 
         ParsedValue := TValue.From<Int64>(Int64Value);
         Exit(True);
-      end;
+end;
 
     tkFloat:
       begin
@@ -417,7 +393,7 @@ begin
         begin
           ErrorMessage := 'must be a number';
           Exit;
-        end;
+end;
 
         NumericText := JsonValue.Value;
 
@@ -429,19 +405,18 @@ begin
           begin
             ErrorMessage := 'must be a valid currency';
             Exit;
-          end;
+end;
 
           ParsedValue := TValue.From<Currency>(CurrencyValue);
           Exit(True);
-        end;
-
-        var FloatValue: Double;
+end;
+var FloatValue: Double;
 
         if not TryStrToFloat(NumericText, FloatValue, FormatSettings) then
         begin
           ErrorMessage := 'must be a valid number';
           Exit;
-        end;
+end;
 
         if TargetType.Handle = TypeInfo(Double) then
           ParsedValue := TValue.From<Double>(FloatValue)
@@ -453,7 +428,7 @@ begin
           ParsedValue := TValue.From<Double>(FloatValue);
 
         Exit(True);
-      end;
+end;
 
     tkEnumeration:
       begin
@@ -463,17 +438,17 @@ begin
           begin
             ParsedValue := TValue.From<Boolean>(SameText(JsonValue.Value, 'true'));
             Exit(True);
-          end;
+end;
 
           ErrorMessage := 'must be a boolean';
           Exit;
-        end;
+end;
 
         if not (JsonValue is TJSONString) then
         begin
           ErrorMessage := 'must be a string enum value';
           Exit;
-        end;
+end;
 
         EnumValue := GetEnumValue(TargetType.Handle, JsonValue.Value);
 
@@ -481,24 +456,23 @@ begin
         begin
           ErrorMessage := 'has an invalid enum value';
           Exit;
-        end;
+end;
 
         ParsedValue := TValue.FromOrdinal(TargetType.Handle, EnumValue);
         Exit(True);
-      end;
-  end;
+end;
+end;
 
   ErrorMessage := 'has unsupported scalar type';
 end;
-
 function TDtoBinder.TryParseJsonObject(
   const JsonObject: TJSONObject;
   const ATargetType: TRttiType;
   const APropertyPath: string;
-  var ABindingContext: TDtoBindingContext;
+var ABindingContext: TDtoBindingContext;
   out AParsedValue: TValue;
   out AErrorMessage: string
-): Boolean;
+) : Boolean;
 var
   InstanceType: TRttiInstanceType;
   NestedInstance: TObject;
@@ -512,7 +486,7 @@ begin
   begin
     ErrorMessage := 'must be a class type';
     Exit;
-  end;
+end;
 
   InstanceType := TRttiInstanceType(TargetType);
   NestedInstance := InstanceType.MetaclassType.Create;
@@ -530,24 +504,23 @@ begin
     begin
       NestedInstance.Free;
       Exit(True);
-    end;
+end;
 
     ParsedValue := NestedInstance;
     Result := True;
   except
     NestedInstance.Free;
     raise;
-  end;
 end;
-
+end;
 function TDtoBinder.TryParseJsonArray(
   const JsonArray: TJSONArray;
   const ATargetType: TRttiType;
   const APropertyPath: string;
-  var ABindingContext: TDtoBindingContext;
+var ABindingContext: TDtoBindingContext;
   out AParsedValue: TValue;
   out AErrorMessage: string
-): Boolean;
+) : Boolean;
 var
   DynamicArrayType: TRttiDynamicArrayType;
   ElementType: TRttiType;
@@ -566,7 +539,7 @@ begin
   begin
     ErrorMessage := 'is not a dynamic array type';
     Exit;
-  end;
+end;
 
   DynamicArrayType := TRttiDynamicArrayType(TargetType);
   ElementType := DynamicArrayType.ElementType;
@@ -591,10 +564,10 @@ begin
     begin
       if not ElementValue.IsEmpty then
         ElementValues[Index] := ElementValue;
-    end
+end
     else
       BindingContext.AddError(ElementPath, ElementErrorMessage);
-  end;
+end;
 
   if BindingContext.ErrorCount > ErrorCountBeforeParse then
     Exit(True);
@@ -602,7 +575,6 @@ begin
   ParsedValue := TValue.FromArray(TargetType.Handle, ElementValues);
   Result := True;
 end;
-
 procedure TDtoBinder.ParseDto(
   const ARawBody: string;
   const ADtoClass: TClass;
@@ -646,14 +618,13 @@ begin
       Dto.Free;
       Dto := nil;
       raise;
-    end;
+end;
   finally
     RootValue.Free;
     BindingContext.Release;
-  end;
 end;
-
-function TDtoBinder.ParseDto<T>(const ARawBody: string): T;
+end;
+function TDtoBinder.ParseDto<T>(const ARawBody: string) : T;
 var
   RttiContext: TRttiContext;
   RttiType: TRttiType;
@@ -671,5 +642,4 @@ begin
   ParseDto(ARawBody, InstanceType.MetaclassType, Dto);
   Result := Dto as T;
 end;
-
 end.
