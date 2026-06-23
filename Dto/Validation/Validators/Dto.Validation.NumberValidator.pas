@@ -13,8 +13,8 @@ type
       const AContext: TDtoValidationContext;
       out AParsedValue: TValue;
       out AErrorMessages: TArray<string>
-    ) : Boolean; static;
-end;
+    ): Boolean; static;
+  end;
 
 implementation
 
@@ -33,13 +33,15 @@ class function TDtoNumberValidator.TryValidate(
   const AContext: TDtoValidationContext;
   out AParsedValue: TValue;
   out AErrorMessages: TArray<string>
-) : Boolean;
+): Boolean;
 var
   NumberValue: Double;
   MinRule: MinAttribute;
   MaxRule: MaxAttribute;
   IsInRule: IsInAttribute;
   LocalErrors: TList<string>;
+  HasAllowedValue: Boolean;
+  AllowedValuesText: TStringList;
 begin
   Result := False;
   AParsedValue := TValue.Empty;
@@ -56,7 +58,7 @@ begin
         AErrorMessages := ['must be a number'];
 
       Exit;
-end;
+    end;
 
     NumberValue := TJSONNumber(AContext.JsonValue).AsDouble;
 
@@ -66,39 +68,32 @@ end;
     begin
       AErrorMessages := ['must be an integer'];
       Exit;
-end;
+    end;
 
-    if TRttiAttributeHelpers.TryGetAttribute<MinAttribute>(
-      AContext.PropertyInfo,
-      MinRule
-    ) and (NumberValue < MinRule.Value) then
+    if TRttiAttributeHelpers.TryGetAttribute<MinAttribute>(AContext.PropertyInfo, MinRule) and
+       (NumberValue < MinRule.Value) then
     begin
-      if TDtoTypeInspector.IsIntegerType(Context.PropertyInfo) or
-         TDtoTypeInspector.IsInt64Type(Context.PropertyInfo) then
+      if TDtoTypeInspector.IsIntegerType(AContext.PropertyInfo) or
+         TDtoTypeInspector.IsInt64Type(AContext.PropertyInfo) then
         LocalErrors.Add('must be >= ' + Trunc(MinRule.Value).ToString)
       else
         LocalErrors.Add('must be >= ' + FloatToStr(MinRule.Value));
-end;
+    end;
 
-    if TRttiAttributeHelpers.TryGetAttribute<MaxAttribute>(
-      Context.PropertyInfo,
-      MaxRule
-    ) and (NumberValue > MaxRule.Value) then
+    if TRttiAttributeHelpers.TryGetAttribute<MaxAttribute>(AContext.PropertyInfo, MaxRule) and
+       (NumberValue > MaxRule.Value) then
     begin
-      if TDtoTypeInspector.IsIntegerType(Context.PropertyInfo) or
-         TDtoTypeInspector.IsInt64Type(Context.PropertyInfo) then
+      if TDtoTypeInspector.IsIntegerType(AContext.PropertyInfo) or
+         TDtoTypeInspector.IsInt64Type(AContext.PropertyInfo) then
         LocalErrors.Add('must be <= ' + Trunc(MaxRule.Value).ToString)
       else
         LocalErrors.Add('must be <= ' + FloatToStr(MaxRule.Value));
-end;
+    end;
 
-    if TRttiAttributeHelpers.TryGetAttribute<IsInAttribute>(
-      Context.PropertyInfo,
-      IsInRule
-    ) then
+    if TRttiAttributeHelpers.TryGetAttribute<IsInAttribute>(AContext.PropertyInfo, IsInRule) then
     begin
-      var HasAllowedValue := False;
-var AllowedValuesText := TStringList.Create;
+      HasAllowedValue := False;
+      AllowedValuesText := TStringList.Create;
       try
         AllowedValuesText.StrictDelimiter := True;
         AllowedValuesText.Delimiter := ',';
@@ -107,82 +102,46 @@ var AllowedValuesText := TStringList.Create;
         begin
           AllowedValuesText.Add(VarToStr(AllowedValue));
 
-          if VarIsNumeric(AllowedValue) and
-             SameValue(NumberValue, Double(AllowedValue)) then
+          if VarIsNumeric(AllowedValue) and SameValue(NumberValue, Double(AllowedValue)) then
             HasAllowedValue := True;
-end;
+        end;
 
         if not HasAllowedValue then
           LocalErrors.Add('must be one of: ' + AllowedValuesText.DelimitedText);
       finally
         AllowedValuesText.Free;
-end;
-end;
-
-    {if TRttiAttributeHelpers.HasAttribute<CurrenciesRuleAttribute>(
-      Context.PropertyInfo
-    ) then
-    begin
-      var HasAllowedValue := False;
-var AllowedRuleValues := Config.Rules.AllowedDenominations;
-var AllowedValuesText := TStringList.Create;
-      try
-        AllowedValuesText.StrictDelimiter := True;
-        AllowedValuesText.Delimiter := ',';
-
-        for var AllowedRuleValue in AllowedRuleValues do
-        begin
-          AllowedValuesText.Add(CurrToStr(AllowedRuleValue));
-
-          if SameValue(NumberValue, Double(AllowedRuleValue)) then
-            HasAllowedValue := True;
-end;
-
-        if not HasAllowedValue then
-          LocalErrors.Add('must be one of: ' + AllowedValuesText.DelimitedText);
-      finally
-        AllowedValuesText.Free;
-end;
-end;}
-
-    {if TRttiAttributeHelpers.HasAttribute<MaxOperationAmountRuleAttribute>(
-      Context.PropertyInfo
-    ) then
-    begin
-      var MaxAllowedAmount := Config.Rules.MaxOperationAmount;
-
-      if (MaxAllowedAmount > 0) and (NumberValue > Double(MaxAllowedAmount)) then
-        LocalErrors.Add('must be <= ' + CurrToStr(MaxAllowedAmount));
-end;}
+      end;
+    end;
 
     if LocalErrors.Count > 0 then
     begin
-      ErrorMessages := LocalErrors.ToArray;
+      AErrorMessages := LocalErrors.ToArray;
       Exit;
-end;
+    end;
 
-    if TDtoTypeInspector.IsCurrencyType(Context.PropertyInfo) then
+    if TDtoTypeInspector.IsCurrencyType(AContext.PropertyInfo) then
     begin
-      ParsedValue := TValue.From<Currency>(Currency(NumberValue));
+      AParsedValue := TValue.From<Currency>(Currency(NumberValue));
       Exit(True);
-end;
+    end;
 
-    case Context.PropertyInfo.PropertyType.TypeKind of
+    case AContext.PropertyInfo.PropertyType.TypeKind of
       tkInteger:
-        ParsedValue := TValue.From<Integer>(Trunc(NumberValue));
+        AParsedValue := TValue.From<Integer>(Trunc(NumberValue));
 
       tkInt64:
-        ParsedValue := TValue.From<Int64>(Int64(Trunc(NumberValue)));
+        AParsedValue := TValue.From<Int64>(Int64(Trunc(NumberValue)));
 
       tkFloat:
-        ParsedValue := TValue.From<Double>(NumberValue);
+        AParsedValue := TValue.From<Double>(NumberValue);
     else
-      ParsedValue := TValue.From<Double>(NumberValue);
-end;
+      AParsedValue := TValue.From<Double>(NumberValue);
+    end;
 
     Result := True;
   finally
     LocalErrors.Free;
+  end;
 end;
-end;
+
 end.

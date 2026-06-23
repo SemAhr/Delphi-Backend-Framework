@@ -14,24 +14,27 @@ type
   TControllerScanner = class
   private
     FRttiContext: TRttiContext;
-function GetControllerBasePath(ARttiType: TRttiType) : string;
-function CombinePaths(const ABasePath, AMethodPath: string): string;
-function ImplementsHttpController(ARttiType: TRttiType) : Boolean;
-public
+    function GetControllerBasePath(const ARttiType: TRttiType): string;
+    function CombinePaths(const ABasePath, AMethodPath: string): string;
+    function ImplementsHttpController(const ARttiType: TRttiType): Boolean;
+  public
     constructor Create;
-function Scan(const AControllerClasses: array of TClass) : TObjectList<TRouteDescriptor>;
-end;
+    
+    function Scan(const AControllerClasses: array of TClass): TObjectList<TRouteDescriptor>;
+  end;
 
 implementation
 
 uses
   Http.ActionMetadata;
+
 constructor TControllerScanner.Create;
 begin
   inherited Create;
   FRttiContext := TRttiContext.Create;
 end;
-function TControllerScanner.GetControllerBasePath(ARttiType: TRttiType) : string;
+
+function TControllerScanner.GetControllerBasePath(const ARttiType: TRttiType): string;
 var
   Attr: TCustomAttribute;
 begin
@@ -41,9 +44,10 @@ begin
   begin
     if Attr is RouteAttribute then
       Exit(RouteAttribute(Attr).Path);
+  end;
 end;
-end;
-function TControllerScanner.CombinePaths(const ABasePath, AMethodPath: string) : string;
+
+function TControllerScanner.CombinePaths(const ABasePath, AMethodPath: string): string;
 var
   BasePath: string;
   MethodPath: string;
@@ -67,7 +71,8 @@ begin
 
   Result := BasePath + MethodPath;
 end;
-function TControllerScanner.ImplementsHttpController(ARttiType: TRttiType) : Boolean;
+
+function TControllerScanner.ImplementsHttpController(const ARttiType: TRttiType): Boolean;
 var
   InstanceType: TRttiInstanceType;
   InterfaceType: TRttiInterfaceType;
@@ -83,9 +88,10 @@ begin
   begin
     if InterfaceType.GUID = IHttpController then
       Exit(True);
+  end;
 end;
-end;
-function TControllerScanner.Scan(const AControllerClasses: array of TClass) : TObjectList<TRouteDescriptor>;
+
+function TControllerScanner.Scan(const AControllerClasses: array of TClass): TObjectList<TRouteDescriptor>;
 var
   ControllerClass: TClass;
   ControllerType: TRttiType;
@@ -141,17 +147,18 @@ begin
                 );
               finally
                 Metadata.Free;
-end;
-end;
-end;
-end;
-end;
+              end;
+            end;
+          end;
+        end;
+      end;
     except
       Result.Free;
       raise;
-end;
+    end;
   finally
     MetadataFactory.Free;
+  end;
 end;
-end;
+
 end.

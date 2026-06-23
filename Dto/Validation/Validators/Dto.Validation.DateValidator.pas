@@ -13,8 +13,8 @@ type
       const AContext: TDtoValidationContext;
       out AParsedValue: TValue;
       out AErrorMessages: TArray<string>
-    ) : Boolean; static;
-end;
+    ): Boolean; static;
+  end;
 
 implementation
 
@@ -28,7 +28,7 @@ class function TDtoDateValidator.TryValidate(
   const AContext: TDtoValidationContext;
   out AParsedValue: TValue;
   out AErrorMessages: TArray<string>
-) : Boolean;
+): Boolean;
 var
   DateValue: TDateTime;
   DateTypeMessage: string;
@@ -43,7 +43,7 @@ begin
   begin
     AErrorMessages := [DateTypeMessage];
     Exit;
-end;
+  end;
 
   try
     DateValue := ISO8601ToDate(TJSONString(AContext.JsonValue).Value, False);
@@ -55,6 +55,7 @@ end;
     Result := True;
   except
     AErrorMessages := [DateTypeMessage];
+  end;
 end;
-end;
+
 end.

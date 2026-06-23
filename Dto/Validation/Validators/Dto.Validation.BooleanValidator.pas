@@ -13,8 +13,8 @@ type
       const AContext: TDtoValidationContext;
       out AParsedValue: TValue;
       out AErrorMessages: TArray<string>
-    ) : Boolean; static;
-end;
+    ): Boolean; static;
+  end;
 
 implementation
 
@@ -25,7 +25,7 @@ class function TDtoBooleanValidator.TryValidate(
   const AContext: TDtoValidationContext;
   out AParsedValue: TValue;
   out AErrorMessages: TArray<string>
-) : Boolean;
+): Boolean;
 var
   BooleanValue: Boolean;
 begin
@@ -41,9 +41,10 @@ begin
   begin
     AErrorMessages := ['must be a boolean'];
     Exit;
-end;
+  end;
 
   AParsedValue := TValue.From<Boolean>(BooleanValue);
   Result := True;
 end;
+
 end.

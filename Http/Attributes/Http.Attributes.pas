@@ -9,45 +9,46 @@ type
   RouteAttribute = class(TCustomAttribute)
   private
     FPath: string;
-public
+  public
     constructor Create(const APath: string);
-property Path: string read FPath;
-end;
+    
+    property Path: string read FPath;
+  end;
 
   HttpMethodAttribute = class(TCustomAttribute)
   private
     FMethod: string;
     FPath: string;
-public
+  public
     constructor Create(const AMethod: string; const APath: string);
-property Method: string read FMethod;
-property Path: string read FPath;
-end;
+    property Method: string read FMethod;
+    property Path: string read FPath;
+  end;
 
   GetAttribute = class(HttpMethodAttribute)
   public
     constructor Create(const APath: string = '');
-end;
+  end;
 
   PostAttribute = class(HttpMethodAttribute)
   public
     constructor Create(const APath: string = '');
-end;
+  end;
 
   PutAttribute = class(HttpMethodAttribute)
   public
     constructor Create(const APath: string = '');
-end;
+  end;
 
   PatchAttribute = class(HttpMethodAttribute)
   public
     constructor Create(const APath: string = '');
-end;
+  end;
 
   DeleteAttribute = class(HttpMethodAttribute)
   public
     constructor Create(const APath: string = '');
-end;
+  end;
 
 implementation
 
@@ -61,7 +62,7 @@ end;
 
 { HttpMethodAttribute }
 
-constructor HttpMethodAttribute.Create(const AMethod, APath: string);
+constructor HttpMethodAttribute.Create(const AMethod: string; const APath: string);
 begin
   inherited Create;
   FMethod := UpperCase(AMethod);
@@ -102,4 +103,5 @@ constructor DeleteAttribute.Create(const APath: string);
 begin
   inherited Create('DELETE', APath);
 end;
+
 end.

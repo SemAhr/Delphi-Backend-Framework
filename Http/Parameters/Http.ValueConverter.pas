@@ -14,7 +14,7 @@ type
       const ATargetType: TRttiType;
       out AValue: TValue;
       out AErrorMessage: string
-    ) : Boolean; static;
+    ): Boolean; static;
 end;
 
 implementation
@@ -28,7 +28,7 @@ class function TValueConverter.TryConvertString(
   const ATargetType: TRttiType;
   out AValue: TValue;
   out AErrorMessage: string
-) : Boolean;
+): Boolean;
 var
   IntValue: Integer;
   Int64Value: Int64;

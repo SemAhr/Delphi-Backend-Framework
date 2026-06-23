@@ -9,12 +9,12 @@ uses
 type
   TDtoMetadata = class
   public
-    class function GetJsonFieldName(const APropertyInfo: TRttiProperty) : string; static;
-end;
+    class function GetJsonFieldName(const APropertyInfo: TRttiProperty): string; static;
+  end;
 
 implementation
 
-class function TDtoMetadata.GetJsonFieldName(const APropertyInfo: TRttiProperty) : string;
+class function TDtoMetadata.GetJsonFieldName(const APropertyInfo: TRttiProperty): string;
 begin
   Result := APropertyInfo.Name;
 
@@ -22,4 +22,5 @@ begin
     if AttributeItem is JsonNameAttribute then
       Exit(JsonNameAttribute(AttributeItem).Name);
 end;
+
 end.

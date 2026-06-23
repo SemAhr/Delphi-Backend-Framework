@@ -15,25 +15,29 @@ type
   private
     FServer: TIdHTTPServer;
     FRouter: IHttpRouter;
-procedure HandleCommand(
+    procedure HandleCommand(
       AContext: TIdContext;
       ARequestInfo: TIdHTTPRequestInfo;
       AResponseInfo: TIdHTTPResponseInfo
     );
-function BuildRequest(const ARequestInfo: TIdHTTPRequestInfo): THttpRequest;
-procedure WriteResponse(const AResponse: THttpResponse; const AResponseInfo: TIdHTTPResponseInfo);
-public
+    
+    function BuildRequest(const ARequestInfo: TIdHTTPRequestInfo): THttpRequest;
+    
+    procedure WriteResponse(const AResponse: THttpResponse; const AResponseInfo: TIdHTTPResponseInfo);
+  public
     constructor Create(const APort: Integer; const ARouter: IHttpRouter);
-destructor Destroy; override;
-procedure Start;
-procedure Stop;
-end;
+    destructor Destroy; override;
+    
+    procedure Start;
+    procedure Stop;
+  end;
 
 implementation
 
 uses
   System.Classes,
   AppExceptions;
+
 constructor THttpServer.Create(const APort: Integer; const ARouter: IHttpRouter);
 begin
   inherited Create;
@@ -48,6 +52,7 @@ begin
   FServer.OnCommandGet := HandleCommand;
   FServer.OnCommandOther := HandleCommand;
 end;
+
 destructor THttpServer.Destroy;
 begin
   Stop;
@@ -56,16 +61,19 @@ begin
 
   inherited;
 end;
+
 procedure THttpServer.Start;
 begin
   FServer.Active := True;
 end;
+
 procedure THttpServer.Stop;
 begin
   if FServer.Active then
     FServer.Active := False;
 end;
-function THttpServer.BuildRequest(const ARequestInfo: TIdHTTPRequestInfo) : THttpRequest;
+
+function THttpServer.BuildRequest(const ARequestInfo: TIdHTTPRequestInfo): THttpRequest;
 begin
   Result := THttpRequest.Create;
 
@@ -81,7 +89,7 @@ begin
         LowerCase(Name),
         ARequestInfo.RawHeaders.ValueFromIndex[I]
       );
-end;
+  end;
 
   for var I := 0 to ARequestInfo.Params.Count - 1 do
   begin
@@ -92,7 +100,7 @@ end;
         Name,
         ARequestInfo.Params.ValueFromIndex[I]
       );
-end;
+  end;
 
   if Assigned(ARequestInfo.PostStream) then
   begin
@@ -104,23 +112,28 @@ end;
       Result.Body := DataString;
     finally
       Free;
+    end;
+  end;
 end;
-end;
-end;
-procedure TSimpleHttpServer.WriteResponse(const AResponse: THttpResponse; const AResponseInfo: TIdHTTPResponseInfo);
+
+procedure THttpServer.WriteResponse(const AResponse: THttpResponse; const AResponseInfo: TIdHTTPResponseInfo);
 begin
   AResponseInfo.ResponseNo := AResponse.StatusCode;
   AResponseInfo.ContentType := AResponse.ContentType;
   AResponseInfo.ContentText := AResponse.Body;
 end;
-procedure TSimpleHttpServer.HandleCommand(
+
+procedure THttpServer.HandleCommand(
   AContext: TIdContext;
   ARequestInfo: TIdHTTPRequestInfo;
   AResponseInfo: TIdHTTPResponseInfo
 );
+var
+  Request: THttpRequest;
+  Response: THttpResponse;
 begin
-  var Request: THttpRequest := nil;
-var Response: THttpResponse := nil;
+  Request := nil;
+  Response := nil;
 
   try
     try
@@ -136,13 +149,14 @@ var Response: THttpResponse := nil;
           ),
           500
         );
-end;
-end;
+      end;
+    end;
 
     WriteResponse(Response, AResponseInfo);
   finally
     Response.Free;
     Request.Free;
+  end;
 end;
-end;
+
 end.

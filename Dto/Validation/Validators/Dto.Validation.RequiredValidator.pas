@@ -13,8 +13,8 @@ type
       const APropertyInfo: TRttiProperty;
       const AJsonValue: TJSONValue;
       out AErrorMessage: string
-    ) : Boolean; static;
-end;
+    ): Boolean; static;
+  end;
 
 implementation
 
@@ -26,7 +26,7 @@ class function TDtoRequiredValidator.TryValidate(
   const APropertyInfo: TRttiProperty;
   const AJsonValue: TJSONValue;
   out AErrorMessage: string
-) : Boolean;
+): Boolean;
 begin
   Result := True;
   AErrorMessage := '';
@@ -38,6 +38,7 @@ begin
   begin
     AErrorMessage := 'is required';
     Exit(False);
+  end;
 end;
-end;
+
 end.

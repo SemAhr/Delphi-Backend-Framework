@@ -9,10 +9,10 @@ type
   THttpContext = class
   private
     FRequest: THttpRequest;
-public
+  public
     constructor Create(const ARequest: THttpRequest);
-property Request: THttpRequest read FRequest;
-end;
+    property Request: THttpRequest read FRequest;
+  end;
 
 implementation
 
@@ -21,4 +21,5 @@ begin
   inherited Create;
   FRequest := ARequest;
 end;
+
 end.

@@ -13,8 +13,8 @@ type
       const AContext: TDtoValidationContext;
       out AParsedValue: TValue;
       out AErrorMessages: TArray<string>
-    ) : Boolean; static;
-end;
+    ): Boolean; static;
+  end;
 
 implementation
 
@@ -31,12 +31,14 @@ class function TDtoStringValidator.TryValidate(
   const AContext: TDtoValidationContext;
   out AParsedValue: TValue;
   out AErrorMessages: TArray<string>
-) : Boolean;
+): Boolean;
 var
   StringValue: string;
   LengthRule: LengthAttribute;
   IsInRule: IsInAttribute;
   LocalErrors: TList<string>;
+  HasAllowedValue: Boolean;
+  AllowedValuesText: TStringList;
 begin
   Result := False;
   AParsedValue := TValue.Empty;
@@ -48,7 +50,7 @@ begin
     begin
       AErrorMessages := ['must be a string'];
       Exit;
-end;
+    end;
 
     StringValue := TJSONString(AContext.JsonValue).Value;
 
@@ -56,17 +58,14 @@ end;
        (Trim(StringValue) = '') then
       LocalErrors.Add('cannot be empty');
 
-    if TRttiAttributeHelpers.TryGetAttribute<LengthAttribute>(
-      AContext.PropertyInfo,
-      LengthRule
-    ) then
+    if TRttiAttributeHelpers.TryGetAttribute<LengthAttribute>(AContext.PropertyInfo, LengthRule) then
     begin
       if (LengthRule.MinLength >= 0) and
          (LengthRule.MinLength = LengthRule.MaxLength) then
       begin
         if LengthRule.MinLength <> StringValue.Length then
           LocalErrors.Add('length must be ' + LengthRule.MinLength.ToString);
-end
+      end
       else
       begin
         if (LengthRule.MinLength >= 0) and
@@ -76,12 +75,10 @@ end
         if (LengthRule.MaxLength >= 0) and
            (StringValue.Length > LengthRule.MaxLength) then
           LocalErrors.Add('length must be <= ' + LengthRule.MaxLength.ToString);
-end;
-end;
+      end;
+    end;
 
-    if TRttiAttributeHelpers.HasAttribute<IsNumberStringAttribute>(
-      AContext.PropertyInfo
-    ) then
+    if TRttiAttributeHelpers.HasAttribute<IsNumberStringAttribute>(AContext.PropertyInfo) then
     begin
       for var Index := 1 to Length(StringValue) do
       begin
@@ -89,17 +86,14 @@ end;
         begin
           LocalErrors.Add('must contain only digits');
           Break;
-end;
-end;
-end;
+        end;
+      end;
+    end;
 
-    if TRttiAttributeHelpers.TryGetAttribute<IsInAttribute>(
-      AContext.PropertyInfo,
-      IsInRule
-    ) then
+    if TRttiAttributeHelpers.TryGetAttribute<IsInAttribute>(AContext.PropertyInfo, IsInRule) then
     begin
-      var HasAllowedValue := False;
-var AllowedValuesText := TStringList.Create;
+      HasAllowedValue := False;
+      AllowedValuesText := TStringList.Create;
       try
         AllowedValuesText.StrictDelimiter := True;
         AllowedValuesText.Delimiter := ',';
@@ -110,25 +104,26 @@ var AllowedValuesText := TStringList.Create;
 
           if SameText(StringValue, VarToStr(AllowedValue)) then
             HasAllowedValue := True;
-end;
+        end;
 
         if not HasAllowedValue then
           LocalErrors.Add('must be one of: ' + AllowedValuesText.DelimitedText);
       finally
         AllowedValuesText.Free;
-end;
-end;
+      end;
+    end;
 
     if LocalErrors.Count > 0 then
     begin
       AErrorMessages := LocalErrors.ToArray;
       Exit;
-end;
+    end;
 
     AParsedValue := TValue.From<string>(StringValue);
     Result := True;
   finally
     LocalErrors.Free;
+  end;
 end;
-end;
+
 end.

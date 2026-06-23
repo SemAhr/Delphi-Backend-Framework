@@ -16,18 +16,17 @@ type
   private
     FContainer: IContainer;
     FParameterBinder: IParameterBinder;
-public
+  public
     constructor Create(const AContainer: IContainer; const AParameterBinder: IParameterBinder);
-function Invoke(
-      const ARoute: TRouteDescriptor;
-      const AContext: THttpContext
-    ): TValue;
-end;
+
+    function Invoke(const ARoute: TRouteDescriptor; const AContext: THttpContext): TValue;
+  end;
 
 implementation
 
 uses
   AppExceptions;
+
 constructor TControllerActionInvoker.Create(const AContainer: IContainer; const AParameterBinder: IParameterBinder);
 begin
   inherited Create;
@@ -41,7 +40,8 @@ begin
   FContainer := AContainer;
   FParameterBinder := AParameterBinder;
 end;
-function TControllerActionInvoker.Invoke(const ARoute: TRouteDescriptor; const AContext: THttpContext) : TValue;
+
+function TControllerActionInvoker.Invoke(const ARoute: TRouteDescriptor; const AContext: THttpContext): TValue;
 var
   Controller: TObject;
   Arguments: TArray<TValue>;
@@ -58,8 +58,9 @@ begin
   SetLength(Arguments, Length(ARoute.Parameters));
 
   for Index := 0 to High(ARoute.Parameters) do
-    Arguments[Index] := FParameterBinder.Bind(AContext, ARoute.Parameters[Index]);
+    Arguments[Index] := FParameterBinder.Execute(AContext, ARoute.Parameters[Index]);
 
   Result := ARoute.MethodInfo.Invoke(Controller, Arguments);
 end;
+
 end.

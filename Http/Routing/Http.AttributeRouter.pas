@@ -16,24 +16,29 @@ type
   private
     FRoutes: TObjectList<TRouteDescriptor>;
     FActionInvoker: IControllerActionInvoker;
-function SplitPath(const AValue: string) : TArray<string>;
-function MatchPath(
+    
+    function SplitPath(const AValue: string): TArray<string>;
+    
+    function MatchPath(
       const APattern: string;
       const APath: string;
       const AParams: TDictionary<string, string>
     ): Boolean;
-function InvokeRoute(const ARoute: TRouteDescriptor; const ARequest: THttpRequest) : THttpResponse;
-public
+    
+    function InvokeRoute(const ARoute: TRouteDescriptor; const ARequest: THttpRequest): THttpResponse;
+  public
     constructor Create(const ARoutes: TObjectList<TRouteDescriptor>; const AActionInvoker: IControllerActionInvoker);
-destructor Destroy; override;
-function Dispatch(const ARequest: THttpRequest) : THttpResponse;
-end;
+    destructor Destroy; override;
+    
+    function Dispatch(const ARequest: THttpRequest): THttpResponse;
+  end;
 
 implementation
 
 uses
   AppExceptions,
   Http.Context;
+
 constructor TAttributeRouter.Create(const ARoutes: TObjectList<TRouteDescriptor>; const AActionInvoker: IControllerActionInvoker);
 begin
   inherited Create;
@@ -47,12 +52,14 @@ begin
   FRoutes := ARoutes;
   FActionInvoker := AActionInvoker;
 end;
+
 destructor TAttributeRouter.Destroy;
 begin
   FRoutes.Free;
   inherited;
 end;
-function TAttributeRouter.SplitPath(const AValue: string) : TArray<string>;
+
+function TAttributeRouter.SplitPath(const AValue: string): TArray<string>;
 var
   CleanValue: string;
 begin
@@ -62,15 +69,16 @@ begin
   begin
     SetLength(Result, 0);
     Exit;
-end;
+  end;
 
   Result := CleanValue.Split(['/']);
 end;
+
 function TAttributeRouter.MatchPath(
   const APattern: string;
   const APath: string;
   const AParams: TDictionary<string, string>
-) : Boolean;
+): Boolean;
 var
   PatternParts: TArray<string>;
   PathParts: TArray<string>;
@@ -102,15 +110,16 @@ begin
 
       AParams.AddOrSetValue(ParamName, PathParts[I]);
       Continue;
-end;
+    end;
 
     if not SameText(PatternPart, PathParts[I]) then
       Exit(False);
-end;
+  end;
 
   Result := True;
 end;
-function TAttributeRouter.InvokeRoute(const ARoute: TRouteDescriptor; const ARequest: THttpRequest) : THttpResponse;
+
+function TAttributeRouter.InvokeRoute(const ARoute: TRouteDescriptor; const ARequest: THttpRequest): THttpResponse;
 var
   Context: THttpContext;
   ReturnValue: TValue;
@@ -120,14 +129,15 @@ begin
     ReturnValue := FActionInvoker.Invoke(ARoute, Context);
   finally
     Context.Free;
-end;
+  end;
 
   if ReturnValue.IsEmpty then
     Exit(THttpResponse.NoContent);
 
   Result := ReturnValue.AsType<THttpResponse>;
 end;
-function TAttributeRouter.Dispatch(const ARequest: THttpRequest) : THttpResponse;
+
+function TAttributeRouter.Dispatch(const ARequest: THttpRequest): THttpResponse;
 var
   Route: TRouteDescriptor;
 begin
@@ -138,11 +148,12 @@ begin
 
     if MatchPath(Route.Path, ARequest.Path, ARequest.RouteParams) then
       Exit(InvokeRoute(Route, ARequest));
-end;
+  end;
 
   Result := THttpResponse.Json(
     '{"error":"Route not found"}',
     404
   );
 end;
+
 end.

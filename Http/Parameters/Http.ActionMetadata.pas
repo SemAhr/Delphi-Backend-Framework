@@ -14,30 +14,33 @@ type
   private
     FMethod: TRttiMethod;
     FParameters: TArray<TParameterDescriptor>;
-public
+  public
     constructor Create(const AMethod: TRttiMethod; const AParameters: TArray<TParameterDescriptor>);
-property MethodInfo: TRttiMethod read FMethod;
-property Parameters: TArray<TParameterDescriptor> read FParameters;
-end;
+    
+    property MethodInfo: TRttiMethod read FMethod;
+    property Parameters: TArray<TParameterDescriptor> read FParameters;
+  end;
 
   TActionMetadataFactory = class
   private
-    function GetParameterSource(const AParameter: TRttiParameter; out ASourceName: string) : TParameterSource;
-public
-    function CreateMetadata(const AMethodInfo: TRttiMethod) : TActionMetadata;
-end;
+    function GetParameterSource(const AParameter: TRttiParameter; out ASourceName: string): TParameterSource;
+  public
+    function CreateMetadata(const AMethodInfo: TRttiMethod): TActionMetadata;
+  end;
 
 implementation
 
 uses
   Http.Parameter.Attributes;
+
 constructor TActionMetadata.Create(const AMethod: TRttiMethod; const AParameters: TArray<TParameterDescriptor>);
 begin
   inherited Create;
   FMethod := AMethod;
   FParameters := AParameters;
 end;
-function TActionMetadataFactory.GetParameterSource(const AParameter: TRttiParameter; out ASourceName: string) : TParameterSource;
+
+function TActionMetadataFactory.GetParameterSource(const AParameter: TRttiParameter; out ASourceName: string): TParameterSource;
 var
   Attr: TCustomAttribute;
 begin
@@ -53,25 +56,26 @@ begin
     begin
       ASourceName := FromRouteAttribute(Attr).Name;
       Exit(psRoute);
-end;
+    end;
 
     if Attr is FromQueryAttribute then
     begin
       ASourceName := FromQueryAttribute(Attr).Name;
       Exit(psQuery);
-end;
+    end;
 
     if Attr is FromHeaderAttribute then
     begin
       ASourceName := FromHeaderAttribute(Attr).Name;
       Exit(psHeader);
-end;
+    end;
 
     if Attr is FromBodyAttribute then
       Exit(psBody);
+  end;
 end;
-end;
-function TActionMetadataFactory.CreateMetadata(const AMethodInfo: TRttiMethod) : TActionMetadata;
+
+function TActionMetadataFactory.CreateMetadata(const AMethodInfo: TRttiMethod): TActionMetadata;
 var
   RttiParams: TArray<TRttiParameter>;
   Descriptors: TArray<TParameterDescriptor>;
@@ -100,8 +104,9 @@ begin
     Descriptors[Index].SourceName := SourceName;
     Descriptors[Index].RttiParameter := RttiParams[Index];
     Descriptors[Index].ParameterType := RttiParams[Index].ParamType;
-end;
+  end;
 
   Result := TActionMetadata.Create(AMethodInfo, Descriptors);
 end;
+
 end.
