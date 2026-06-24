@@ -6,9 +6,9 @@ uses
   Http.Core;
 
 type
-  IHttpRouter = interface
-    ['{4B60B6AA-1E8E-4338-AF32-B069E7F52A86}']
-    
+  IRouter = interface
+    ['{fba41ba9-ead0-46e2-b292-6a7a3ded2b56}']
+
     function Dispatch(const ARequest: THttpRequest): THttpResponse;
   end;
 

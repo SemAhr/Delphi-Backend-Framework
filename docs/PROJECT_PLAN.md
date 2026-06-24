@@ -199,7 +199,7 @@ Formato de respuesta:
   "error": "Unsupported Media Type",
   "description": "Only application/json content type is supported."
 }
-```
+``` 
 
 ### Implementación sugerida
 

@@ -9,7 +9,6 @@ uses
   Container.Contract in 'Shared\Container\Container.Contract.pas',
   AppExceptions in 'Shared\Exceptions\AppExceptions.pas',
   HttpExceptions in 'Shared\Exceptions\HttpExceptions.pas',
-  RttiAttribute.Helpers in 'Shared\Rtti\RttiAttribute.Helpers.pas',
   Dto.Attributes in 'Dto\Attributes\Dto.Attributes.pas',
   Dto.Binder.Contract in 'Dto\Binding\Dto.Binder.Contract.pas',
   Dto.Binder in 'Dto\Binding\Dto.Binder.pas',
@@ -29,7 +28,7 @@ uses
   Http.Router.Contract in 'Http\Routing\Http.Router.Contract.pas',
   Http.ControllerScanner in 'Http\Routing\Http.ControllerScanner.pas',
   Http.ActionInvoker.Contract in 'Http\Routing\Http.ActionInvoker.Contract.pas',
-  Http.AttributeRouter in 'Http\Routing\Http.AttributeRouter.pas',
+  Http.Router in 'Http\Routing\Http.Router.pas',
   Http.ActionInvoker in 'Http\Routing\Http.ActionInvoker.pas',
   Http.Server in 'Http\Http.Server.pas',
   Http.Parameter.Attributes in 'Http\Parameters\Http.Parameter.Attributes.pas',
@@ -41,7 +40,22 @@ uses
   Http.ParameterBinder.Contract in 'Http\Parameters\Http.ParameterBinder.Contract.pas',
   Http.BodyBinder in 'Http\Parameters\Http.BodyBinder.pas',
   Http.ParameterBinder in 'Http\Parameters\Http.ParameterBinder.pas',
-  Http.Composition in 'Http\Http.Composition.pas';
+  Http.Composition in 'Http\Http.Composition.pas',
+  Clabe.Helpers in 'Shared\Helpers\Clabe.Helpers.pas',
+  Date.Helpers in 'Shared\Helpers\Date.Helpers.pas',
+  Env.Helpers in 'Shared\Helpers\Env.Helpers.pas',
+  Inet.Helpers in 'Shared\Helpers\Inet.Helpers.pas',
+  Json.Helpers in 'Shared\Helpers\Json.Helpers.pas',
+  Path.Helpers in 'Shared\Helpers\Path.Helpers.pas',
+  RttiAttribute.Helpers in 'Shared\Helpers\RttiAttribute.Helpers.pas',
+  StringArray.Helpers in 'Shared\Helpers\StringArray.Helpers.pas',
+  Options.Contract in 'Shared\Options\Options.Contract.pas',
+  Logger.Contract in 'Shared\Logging\Logger.Contract.pas',
+  Auth.Controller in 'Src\Presentation\Controllers\Auth.Controller.pas',
+  Jwt.Entity in 'Src\Domain\Jwt.Entity.pas',
+  Role in 'Src\Domain\Role.pas',
+  Bootstrap in 'Src\Bootstrap.pas',
+  Dto.Binder.Context in 'Dto\Context\Dto.Binder.Context.pas';
 
 begin
   try

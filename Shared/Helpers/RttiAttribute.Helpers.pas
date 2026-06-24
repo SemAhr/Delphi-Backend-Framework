@@ -30,7 +30,7 @@ begin
   Result := False;
 end;
 
-class function TRttiAttributeHelpers.TryGetAttribute<T: TCustomAttribute>(const ARttiObject: TRttiObject; out AAttributeValue: T): Boolean;
+class function TRttiAttributeHelpers.TryGetAttribute<T>(const ARttiObject: TRttiObject; out AAttributeValue: T): Boolean;
 var
   AttributeItem: TCustomAttribute;
 begin
@@ -51,7 +51,7 @@ begin
   Result := False;
 end;
 
-class function TRttiAttributeHelpers.GetAttributes<T: TCustomAttribute>(const ARttiObject: TRttiObject): TObjectList<T>;
+class function TRttiAttributeHelpers.GetAttributes<T >(const ARttiObject: TRttiObject): TObjectList<T>;
 var
   AttributeItem: TCustomAttribute;
   Values: TObjectList<T>;

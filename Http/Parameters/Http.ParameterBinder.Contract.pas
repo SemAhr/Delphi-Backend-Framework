@@ -9,8 +9,8 @@ uses
 
 type
   IParameterBinder = interface
-    ['{3E853950-B8ED-44F4-BA61-5EE21066128D}']
-    
+    ['{e7e55968-99c6-4702-8310-ef90b846f43d}']
+
     function Execute(const AContext: THttpContext; const ADescriptor: TParameterDescriptor): TValue;
   end;
 

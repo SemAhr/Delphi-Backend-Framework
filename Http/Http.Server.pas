@@ -14,7 +14,8 @@ type
   THttpServer = class
   private
     FServer: TIdHTTPServer;
-    FRouter: IHttpRouter;
+    FRouter: IRouter;
+
     procedure HandleCommand(
       AContext: TIdContext;
       ARequestInfo: TIdHTTPRequestInfo;
@@ -25,7 +26,7 @@ type
     
     procedure WriteResponse(const AResponse: THttpResponse; const AResponseInfo: TIdHTTPResponseInfo);
   public
-    constructor Create(const APort: Integer; const ARouter: IHttpRouter);
+    constructor Create(const APort: Integer; const ARouter: IRouter);
     destructor Destroy; override;
     
     procedure Start;
@@ -38,7 +39,7 @@ uses
   System.Classes,
   AppExceptions;
 
-constructor THttpServer.Create(const APort: Integer; const ARouter: IHttpRouter);
+constructor THttpServer.Create(const APort: Integer; const ARouter: IRouter);
 begin
   inherited Create;
 

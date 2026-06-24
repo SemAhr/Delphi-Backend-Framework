@@ -1,4 +1,4 @@
-unit Http.AttributeRouter;
+unit Http.Router;
 
 interface
 
@@ -12,10 +12,10 @@ uses
   Http.ActionInvoker.Contract;
 
 type
-  TAttributeRouter = class(TInterfacedObject, IHttpRouter)
+  TRouter = class(TInterfacedObject, IRouter)
   private
     FRoutes: TObjectList<TRouteDescriptor>;
-    FActionInvoker: IControllerActionInvoker;
+    FActionInvoker: IActionInvoker;
     
     function SplitPath(const AValue: string): TArray<string>;
     
@@ -27,7 +27,7 @@ type
     
     function InvokeRoute(const ARoute: TRouteDescriptor; const ARequest: THttpRequest): THttpResponse;
   public
-    constructor Create(const ARoutes: TObjectList<TRouteDescriptor>; const AActionInvoker: IControllerActionInvoker);
+    constructor Create(const ARoutes: TObjectList<TRouteDescriptor>; const AActionInvoker: IActionInvoker);
     destructor Destroy; override;
     
     function Dispatch(const ARequest: THttpRequest): THttpResponse;
@@ -39,7 +39,7 @@ uses
   AppExceptions,
   Http.Context;
 
-constructor TAttributeRouter.Create(const ARoutes: TObjectList<TRouteDescriptor>; const AActionInvoker: IControllerActionInvoker);
+constructor TRouter.Create(const ARoutes: TObjectList<TRouteDescriptor>; const AActionInvoker: IActionInvoker);
 begin
   inherited Create;
 
@@ -53,13 +53,13 @@ begin
   FActionInvoker := AActionInvoker;
 end;
 
-destructor TAttributeRouter.Destroy;
+destructor TRouter.Destroy;
 begin
   FRoutes.Free;
   inherited;
 end;
 
-function TAttributeRouter.SplitPath(const AValue: string): TArray<string>;
+function TRouter.SplitPath(const AValue: string): TArray<string>;
 var
   CleanValue: string;
 begin
@@ -74,7 +74,7 @@ begin
   Result := CleanValue.Split(['/']);
 end;
 
-function TAttributeRouter.MatchPath(
+function TRouter.MatchPath(
   const APattern: string;
   const APath: string;
   const AParams: TDictionary<string, string>
@@ -119,14 +119,13 @@ begin
   Result := True;
 end;
 
-function TAttributeRouter.InvokeRoute(const ARoute: TRouteDescriptor; const ARequest: THttpRequest): THttpResponse;
+function TRouter.InvokeRoute(const ARoute: TRouteDescriptor; const ARequest: THttpRequest): THttpResponse;
 var
-  Context: THttpContext;
   ReturnValue: TValue;
 begin
-  Context := THttpContext.Create(ARequest);
+  var Context := THttpContext.Create(ARequest);
   try
-    ReturnValue := FActionInvoker.Invoke(ARoute, Context);
+    ReturnValue := FActionInvoker.Execute(ARoute, Context);
   finally
     Context.Free;
   end;
@@ -137,11 +136,9 @@ begin
   Result := ReturnValue.AsType<THttpResponse>;
 end;
 
-function TAttributeRouter.Dispatch(const ARequest: THttpRequest): THttpResponse;
-var
-  Route: TRouteDescriptor;
+function TRouter.Dispatch(const ARequest: THttpRequest): THttpResponse;
 begin
-  for Route in FRoutes do
+  for var Route in FRoutes do
   begin
     if not SameText(Route.Method, ARequest.Method) then
       Continue;

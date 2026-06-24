@@ -13,15 +13,15 @@ uses
 type
   TParameterBinder = class(TInterfacedObject, IParameterBinder)
   private
-    FBodyBinder: IHttpBodyBinder;
+    FBodyBinder: IBodyBinder;
     
     function FromContext(const AContext: THttpContext; const ADescriptor: TParameterDescriptor): TValue;
     function FromRoute(const AContext: THttpContext; const ADescriptor: TParameterDescriptor): TValue;
-    function BindFromQuery(const AContext: THttpContext; const ADescriptor: TParameterDescriptor): TValue;
+    function FromQuery(const AContext: THttpContext; const ADescriptor: TParameterDescriptor): TValue;
     function FromHeader(const AContext: THttpContext; const ADescriptor: TParameterDescriptor): TValue;
     function FromBody(const AContext: THttpContext; const ADescriptor: TParameterDescriptor): TValue;
   public
-    constructor Create(const ABodyBinder: IHttpBodyBinder);
+    constructor Create(const ABodyBinder: IBodyBinder);
     
     function Execute(const AContext: THttpContext; const ADescriptor: TParameterDescriptor): TValue;
   end;
@@ -33,7 +33,7 @@ uses
   Http.ValueConverter,
   AppExceptions;
 
-constructor TParameterBinder.Create(const ABodyBinder: IHttpBodyBinder);
+constructor TParameterBinder.Create(const ABodyBinder: IBodyBinder);
 begin
   inherited Create;
 
@@ -53,7 +53,7 @@ begin
       Exit(FromRoute(AContext, ADescriptor));
 
     psQuery:
-      Exit(BindFromQuery(AContext, ADescriptor));
+      Exit(FromQuery(AContext, ADescriptor));
 
     psHeader:
       Exit(FromHeader(AContext, ADescriptor));
@@ -102,7 +102,7 @@ begin
     );
 end;
 
-function TParameterBinder.BindFromQuery(const AContext: THttpContext; const ADescriptor: TParameterDescriptor): TValue;
+function TParameterBinder.FromQuery(const AContext: THttpContext; const ADescriptor: TParameterDescriptor): TValue;
 var
   RawValue: string;
   ErrorMessage: string;
@@ -128,10 +128,9 @@ end;
 function TParameterBinder.FromHeader(const AContext: THttpContext; const ADescriptor: TParameterDescriptor): TValue;
 var
   RawValue: string;
-  HeaderName: string;
   ErrorMessage: string;
 begin
-  HeaderName := LowerCase(ADescriptor.SourceName);
+  var HeaderName := LowerCase(ADescriptor.SourceName);
 
   if not AContext.Request.Headers.TryGetValue(HeaderName, RawValue) then
     raise EBinderException.CreateFmt(
@@ -153,10 +152,7 @@ end;
 
 function TParameterBinder.FromBody(const AContext: THttpContext; const ADescriptor: TParameterDescriptor): TValue;
 begin
-  Result := FBodyBinder.Execute(
-    AContext.Request.Body,
-    ADescriptor.ParameterType
-  );
+  Result := FBodyBinder.Execute(AContext.Request.Body, ADescriptor.ParameterType);
 end;
 
 end.

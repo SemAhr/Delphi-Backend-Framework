@@ -101,7 +101,6 @@
         <DCCReference Include="Shared\Container\Container.Contract.pas"/>
         <DCCReference Include="Shared\Exceptions\AppExceptions.pas"/>
         <DCCReference Include="Shared\Exceptions\HttpExceptions.pas"/>
-        <DCCReference Include="Shared\Rtti\RttiAttribute.Helpers.pas"/>
         <DCCReference Include="Dto\Attributes\Dto.Attributes.pas"/>
         <DCCReference Include="Dto\Binding\Dto.Binder.Contract.pas"/>
         <DCCReference Include="Dto\Binding\Dto.Binder.pas"/>
@@ -121,7 +120,7 @@
         <DCCReference Include="Http\Routing\Http.Router.Contract.pas"/>
         <DCCReference Include="Http\Routing\Http.ControllerScanner.pas"/>
         <DCCReference Include="Http\Routing\Http.ActionInvoker.Contract.pas"/>
-        <DCCReference Include="Http\Routing\Http.AttributeRouter.pas"/>
+        <DCCReference Include="Http\Routing\Http.Router.pas"/>
         <DCCReference Include="Http\Routing\Http.ActionInvoker.pas"/>
         <DCCReference Include="Http\Http.Server.pas"/>
         <DCCReference Include="Http\Parameters\Http.Parameter.Attributes.pas"/>
@@ -134,6 +133,21 @@
         <DCCReference Include="Http\Parameters\Http.BodyBinder.pas"/>
         <DCCReference Include="Http\Parameters\Http.ParameterBinder.pas"/>
         <DCCReference Include="Http\Http.Composition.pas"/>
+        <DCCReference Include="Shared\Helpers\Clabe.Helpers.pas"/>
+        <DCCReference Include="Shared\Helpers\Date.Helpers.pas"/>
+        <DCCReference Include="Shared\Helpers\Env.Helpers.pas"/>
+        <DCCReference Include="Shared\Helpers\Inet.Helpers.pas"/>
+        <DCCReference Include="Shared\Helpers\Json.Helpers.pas"/>
+        <DCCReference Include="Shared\Helpers\Path.Helpers.pas"/>
+        <DCCReference Include="Shared\Helpers\RttiAttribute.Helpers.pas"/>
+        <DCCReference Include="Shared\Helpers\StringArray.Helpers.pas"/>
+        <DCCReference Include="Shared\Options\Options.Contract.pas"/>
+        <DCCReference Include="Shared\Logging\Logger.Contract.pas"/>
+        <DCCReference Include="Src\Presentation\Controllers\Auth.Controller.pas"/>
+        <DCCReference Include="Src\Domain\Jwt.Entity.pas"/>
+        <DCCReference Include="Src\Domain\Role.pas"/>
+        <DCCReference Include="Src\Bootstrap.pas"/>
+        <DCCReference Include="Dto\Context\Dto.Binder.Context.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

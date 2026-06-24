@@ -4,7 +4,7 @@ interface
 
 type
   IHttpController = interface
-    ['{CBB5C5A1-1B18-4D8F-9B7D-4A64B21D89F1}']
+    ['{18a50a25-4db1-45ea-9e6a-483bb1996009}']
   end;
 
 implementation

@@ -4,7 +4,7 @@ interface
 
 type
   IDtoBinder = interface
-    ['{59768F01-7C77-4666-90AE-7447C8D23E78}']
+    ['{b56972a6-a9f2-4dae-a7b4-8b1641f646c1}']
     procedure ParseDto(
       const ARawBody: string;
       const ADtoClass: TClass;

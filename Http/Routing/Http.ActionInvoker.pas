@@ -12,14 +12,14 @@ uses
   Http.ActionInvoker.Contract;
 
 type
-  TControllerActionInvoker = class(TInterfacedObject, IControllerActionInvoker)
+  TActionInvoker = class(TInterfacedObject, IActionInvoker)
   private
     FContainer: IContainer;
     FParameterBinder: IParameterBinder;
   public
     constructor Create(const AContainer: IContainer; const AParameterBinder: IParameterBinder);
 
-    function Invoke(const ARoute: TRouteDescriptor; const AContext: THttpContext): TValue;
+    function Execute(const ARoute: TRouteDescriptor; const AContext: THttpContext): TValue;
   end;
 
 implementation
@@ -27,7 +27,7 @@ implementation
 uses
   AppExceptions;
 
-constructor TControllerActionInvoker.Create(const AContainer: IContainer; const AParameterBinder: IParameterBinder);
+constructor TActionInvoker.Create(const AContainer: IContainer; const AParameterBinder: IParameterBinder);
 begin
   inherited Create;
 
@@ -41,13 +41,11 @@ begin
   FParameterBinder := AParameterBinder;
 end;
 
-function TControllerActionInvoker.Invoke(const ARoute: TRouteDescriptor; const AContext: THttpContext): TValue;
+function TActionInvoker.Execute(const ARoute: TRouteDescriptor; const AContext: THttpContext): TValue;
 var
-  Controller: TObject;
   Arguments: TArray<TValue>;
-  Index: Integer;
 begin
-  Controller := FContainer.Resolve(ARoute.ControllerType.Handle);
+  var Controller := FContainer.Resolve(ARoute.ControllerType.Handle);
 
   if Controller = nil then
     raise EMissingDependencyException.CreateFmt(
@@ -57,7 +55,7 @@ begin
 
   SetLength(Arguments, Length(ARoute.Parameters));
 
-  for Index := 0 to High(ARoute.Parameters) do
+  for var Index := 0 to High(ARoute.Parameters) do
     Arguments[Index] := FParameterBinder.Execute(AContext, ARoute.Parameters[Index]);
 
   Result := ARoute.MethodInfo.Invoke(Controller, Arguments);

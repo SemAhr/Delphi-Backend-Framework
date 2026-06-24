@@ -8,10 +8,10 @@ uses
   Http.RouteDescriptor;
 
 type
-  IControllerActionInvoker = interface
-    ['{5215D3B4-6B44-4D63-B457-51BB35A58C70}']
-    
-    function Invoke(const ARoute: TRouteDescriptor; const AContext: THttpContext): TValue;
+  IActionInvoker = interface
+    ['{1c23c272-a91e-4f62-8a0e-dbd4eff74c5a}']
+
+    function Execute(const ARoute: TRouteDescriptor; const AContext: THttpContext): TValue;
   end;
 
 implementation

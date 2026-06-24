@@ -12,7 +12,7 @@ uses
 type
   THttpComposition = class sealed
   public
-    class function CreateDefaultRouter(const ARoutes: TObjectList<TRouteDescriptor>; const AContainer: IContainer): IHttpRouter; static;
+    class function CreateDefaultRouter(const ARoutes: TObjectList<TRouteDescriptor>; const AContainer: IContainer): IRouter; static;
     
     class function CreateDefaultServer(
       const APort: Integer;
@@ -28,20 +28,21 @@ uses
   Dto.Binder.Contract,
   Http.ActionInvoker,
   Http.ActionInvoker.Contract,
-  Http.AttributeRouter,
+  Http.Router,
   Http.BodyBinder,
   Http.BodyBinder.Contract,
   Http.ParameterBinder,
   Http.ParameterBinder.Contract;
 
-class function THttpComposition.CreateDefaultRouter(const ARoutes: TObjectList<TRouteDescriptor>; const AContainer: IContainer): IHttpRouter;
+class function THttpComposition.CreateDefaultRouter(const ARoutes: TObjectList<TRouteDescriptor>; const AContainer: IContainer): IRouter;
 begin
   var DtoBinder := TDtoBinder.Create;
   var BodyBinder := TBodyBinder.Create(DtoBinder);
   var ParameterBinder := TParameterBinder.Create(BodyBinder);
-  var ActionInvoker := TControllerActionInvoker.Create(AContainer, ParameterBinder);
 
-  Result := TAttributeRouter.Create(ARoutes, ActionInvoker);
+  var ActionInvoker := TActionInvoker.Create(AContainer, ParameterBinder);
+
+  Result := TRouter.Create(ARoutes, ActionInvoker);
 end;
 
 class function THttpComposition.CreateDefaultServer(

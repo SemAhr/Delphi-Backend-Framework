@@ -41,54 +41,49 @@ begin
 end;
 
 function TActionMetadataFactory.GetParameterSource(const AParameter: TRttiParameter; out ASourceName: string): TParameterSource;
-var
-  Attr: TCustomAttribute;
 begin
   Result := psUnknown;
   ASourceName := '';
 
-  for Attr in AParameter.GetAttributes do
+  for var Attribute in AParameter.GetAttributes do
   begin
-    if Attr is FromContextAttribute then
+    if Attribute is FromContextAttribute then
       Exit(psContext);
 
-    if Attr is FromRouteAttribute then
+    if Attribute is FromRouteAttribute then
     begin
-      ASourceName := FromRouteAttribute(Attr).Name;
+      ASourceName := FromRouteAttribute(Attribute).Name;
       Exit(psRoute);
     end;
 
-    if Attr is FromQueryAttribute then
+    if Attribute is FromQueryAttribute then
     begin
-      ASourceName := FromQueryAttribute(Attr).Name;
+      ASourceName := FromQueryAttribute(Attribute).Name;
       Exit(psQuery);
     end;
 
-    if Attr is FromHeaderAttribute then
+    if Attribute is FromHeaderAttribute then
     begin
-      ASourceName := FromHeaderAttribute(Attr).Name;
+      ASourceName := FromHeaderAttribute(Attribute).Name;
       Exit(psHeader);
     end;
 
-    if Attr is FromBodyAttribute then
+    if Attribute is FromBodyAttribute then
       Exit(psBody);
   end;
 end;
 
 function TActionMetadataFactory.CreateMetadata(const AMethodInfo: TRttiMethod): TActionMetadata;
 var
-  RttiParams: TArray<TRttiParameter>;
   Descriptors: TArray<TParameterDescriptor>;
-  Index: Integer;
   SourceName: string;
-  Source: TParameterSource;
 begin
-  RttiParams := AMethodInfo.GetParameters;
+  var RttiParams := AMethodInfo.GetParameters;
   SetLength(Descriptors, Length(RttiParams));
 
-  for Index := 0 to High(RttiParams) do
+  for var Index := 0 to High(RttiParams) do
   begin
-    Source := GetParameterSource(RttiParams[Index], SourceName);
+    var Source := GetParameterSource(RttiParams[Index], SourceName);
 
     if Source = psUnknown then
       raise Exception.CreateFmt(

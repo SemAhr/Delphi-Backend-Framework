@@ -8,7 +8,7 @@ uses
   Dto.Binder.Contract;
 
 type
-  TBodyBinder = class(TInterfacedObject, IHttpBodyBinder)
+  TBodyBinder = class(TInterfacedObject, IBodyBinder)
   private
     FDtoBinder: IDtoBinder;
   public
