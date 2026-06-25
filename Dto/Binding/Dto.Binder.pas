@@ -6,7 +6,7 @@ uses
   System.Rtti,
   System.JSON,
   Dto.Binder.Context,
-  Dto.Binder.Contract;
+  Dto.Binder.Port;
 
 type
   TDtoBinder = class(TInterfacedObject, IDtoBinder)
@@ -16,7 +16,7 @@ type
       const AInstance: TObject;
       var ABindingContext: TDtoBindingContext
     );
-    
+
     function TryParseJsonValue(
       const AJsonValue: TJSONValue;
       const ATargetType: TRttiType;
@@ -25,7 +25,7 @@ type
       out AParsedValue: TValue;
       out AErrorMessage: string
     ): Boolean;
-    
+
     function TryParseScalarJsonValue(
       const AJsonValue: TJSONValue;
       const ATargetType: TRttiType;
@@ -33,7 +33,7 @@ type
       out AParsedValue: TValue;
       out AErrorMessage: string
     ): Boolean;
-    
+
     function TryParseJsonArray(
       const AJsonArray: TJSONArray;
       const ATargetType: TRttiType;
@@ -42,7 +42,7 @@ type
       out AParsedValue: TValue;
       out AErrorMessage: string
     ): Boolean;
-    
+
     function TryParseJsonObject(
       const AJsonObject: TJSONObject;
       const ATargetType: TRttiType;
@@ -53,13 +53,13 @@ type
     ): Boolean;
   public
     constructor Create;
-    
+
     procedure ParseDto(
       const ARawBody: string;
       const ADtoClass: TClass;
       out ADto: TObject
     ); overload;
-    
+
     function ParseDto<T: class>(const ARawBody: string): T; overload;
   end;
 

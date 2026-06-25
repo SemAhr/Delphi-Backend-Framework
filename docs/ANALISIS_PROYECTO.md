@@ -197,7 +197,7 @@ El proyecto está dividido conceptualmente en estas capas:
 
 ## 7.1 Shared
 
-### `Shared/Container/Container.Contract.pas`
+### `Shared/Container/Container.Port.pas`
 **Objetivo:** definir el contrato `IContainer` para resolver dependencias por RTTI.
 
 **Responsabilidad principal:**
@@ -285,7 +285,7 @@ El proyecto está dividido conceptualmente en estas capas:
 
 ---
 
-### `Dto/Binding/Dto.Binder.Contract.pas`
+### `Dto/Binding/Dto.Binder.Port.pas`
 **Objetivo:** declarar la interfaz `IDtoBinder`.
 
 **Responsabilidad:**
@@ -423,7 +423,7 @@ El proyecto está dividido conceptualmente en estas capas:
 
 ---
 
-### `Http/Controllers/Http.Controller.Contract.pas`
+### `Http/Controllers/Http.Controller.Port.pas`
 **Objetivo:** definir `IHttpController` como contrato base de los controladores HTTP.
 
 **Rol:**
@@ -462,7 +462,7 @@ El proyecto está dividido conceptualmente en estas capas:
 
 ---
 
-### `Http/Routing/Http.Router.Contract.pas`
+### `Http/Routing/Http.Router.Port.pas`
 **Objetivo:** definir el contrato `IHttpRouter`.
 
 **Responsabilidad:**
@@ -486,7 +486,7 @@ El proyecto está dividido conceptualmente en estas capas:
 
 ---
 
-### `Http/Routing/Http.ActionInvoker.Contract.pas`
+### `Http/Routing/Http.ActionInvoker.Port.pas`
 **Objetivo:** declarar la interfaz del invocador de acciones.
 
 ---
@@ -584,7 +584,7 @@ El proyecto está dividido conceptualmente en estas capas:
 
 ---
 
-### `Http/Parameters/Http.BodyBinder.Contract.pas`
+### `Http/Parameters/Http.BodyBinder.Port.pas`
 **Objetivo:** declarar el contrato del binder del body HTTP.
 
 ---
@@ -599,7 +599,7 @@ El proyecto está dividido conceptualmente en estas capas:
 
 ---
 
-### `Http/Parameters/Http.ParameterBinder.Contract.pas`
+### `Http/Parameters/Http.ParameterBinder.Port.pas`
 **Objetivo:** declarar el contrato del binder general de parámetros.
 
 ---
@@ -678,7 +678,7 @@ Relaciones principales:
 Relaciones principales:
 
 - `Http.ControllerScanner` usa `Http.Attributes`
-- `Http.ControllerScanner` usa `Http.Controller.Contract`
+- `Http.ControllerScanner` usa `Http.Controller.Port`
 - `Http.ControllerScanner` usa `Http.RouteDescriptor`
 - `Http.ControllerScanner` usa `Http.ActionMetadata`
 
@@ -695,7 +695,7 @@ Relaciones principales:
 - `Http.ActionMetadata` usa `Http.Parameter.Binding`
 - `Http.ActionMetadata` usa `Http.ParameterDescriptor`
 - `Http.ParameterBinder` usa `Http.ValueConverter`
-- `Http.ParameterBinder` usa `Http.BodyBinder.Contract`
+- `Http.ParameterBinder` usa `Http.BodyBinder.Port`
 
 **Conclusión:**
 esta capa resuelve cómo convertir el request en argumentos Delphi fuertemente tipados.
@@ -706,9 +706,9 @@ esta capa resuelve cómo convertir el request en argumentos Delphi fuertemente t
 
 Relaciones principales:
 
-- `Http.Server` depende de `Http.Router.Contract`
-- `Http.AttributeRouter` depende de `Http.ActionInvoker.Contract`
-- `Http.ActionInvoker` depende de `Container.Contract` y `Http.ParameterBinder.Contract`
+- `Http.Server` depende de `Http.Router.Port`
+- `Http.AttributeRouter` depende de `Http.ActionInvoker.Port`
+- `Http.ActionInvoker` depende de `Container.Port` y `Http.ParameterBinder.Port`
 
 **Conclusión:**
 esta es la cadena central request → controller.
@@ -782,7 +782,7 @@ No encontré controladores concretos dentro del repositorio.
 
 Sí existe el contrato base:
 
-- `Http/Controllers/Http.Controller.Contract.pas`
+- `Http/Controllers/Http.Controller.Port.pas`
 
 Pero no se encontraron clases que:
 
@@ -823,7 +823,7 @@ Posible refactor incompleto o renombre pendiente.
 ---
 
 ## 11.2 Contrato y uso del body binder no coinciden
-En `Http.BodyBinder.Contract.pas` el contrato expone:
+En `Http.BodyBinder.Port.pas` el contrato expone:
 
 - `Execute(...)`
 

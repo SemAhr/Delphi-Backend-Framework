@@ -8,15 +8,15 @@ uses
 type
   THttpContext = class
   private
-    FRequest: THttpRequest;
+    FRequest: TRequest;
   public
-    constructor Create(const ARequest: THttpRequest);
-    property Request: THttpRequest read FRequest;
+    constructor Create(const ARequest: TRequest);
+    property Request: TRequest read FRequest;
   end;
 
 implementation
 
-constructor THttpContext.Create(const ARequest: THttpRequest);
+constructor THttpContext.Create(const ARequest: TRequest);
 begin
   inherited Create;
   FRequest := ARequest;

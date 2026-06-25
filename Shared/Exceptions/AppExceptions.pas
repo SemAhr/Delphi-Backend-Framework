@@ -15,19 +15,26 @@ type
   EInvalidDependencyException = class(EDependencyException);
 
   EInfrastructureUnavailableException = class(EServiceException);
+  EDatabaseException = class(EServiceException);
+  EBadRequestAppException = class(EServiceException);
+  EUnauthorizedAppException = class(EServiceException);
+  EForbiddenAppException = class(EServiceException);
+  ENotFoundAppException = class(EServiceException);
+  EConflictAppException = class(EServiceException);
+  EBadGatewayAppException = class(EServiceException);
   EJwtException = class(EServiceException);
   ERefreshTokenException = class(EServiceException);
   ESignException = class(EServiceException);
   ESessionException = class(EServiceException);
   EControllerException = class(EServiceException);
-
   EBinderException = class(EServiceException)
   private
     function GetMessages: TArray<string>;
   public
     property Messages: TArray<string> read GetMessages;
-    constructor Create(const AMessage: string); overload;
-    constructor Create(const AMessages: TArray<string>); overload;
+
+    constructor Create(const Message: string); overload;
+    constructor Create(const Messages: TArray<string>); overload;
   end;
 
   EMissingAttributeException = class(EMetadataException);
@@ -40,14 +47,14 @@ implementation
 
 { EBinderException }
 
-constructor EBinderException.Create(const AMessage: string);
+constructor EBinderException.Create(const Message: string);
 begin
-  inherited Create(AMessage);
+  inherited Create(Message);
 end;
 
-constructor EBinderException.Create(const AMessages: TArray<string>);
+constructor EBinderException.Create(const Messages: TArray<string>);
 begin
-  inherited Create(string.Join(',', AMessages));
+  inherited Create(string.Join(',', Messages));
 end;
 
 function EBinderException.GetMessages: TArray<string>;

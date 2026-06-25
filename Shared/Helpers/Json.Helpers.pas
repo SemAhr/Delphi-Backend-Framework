@@ -48,6 +48,8 @@ type
     class function JsonObjectToRecordValue(const RttiType: TRttiType; const JsonObject: TJSONObject): TValue; static;
     class function JsonObjectToObjectValue(const RttiType: TRttiType; const JsonObject: TJSONObject): TValue; static;
     class function JsonArrayToDynamicArrayValue(const RttiType: TRttiType; const JsonArray: TJSONArray): TValue; static;
+
+    class function GetJsonPropertyName(const Prop: TRttiProperty): string; static;
   end;
 
 implementation
@@ -55,7 +57,8 @@ implementation
 uses
   System.NetEncoding,
   System.TimeSpan,
-  AppExceptions;
+  AppExceptions,
+  Dto.Attributes;
 
 { ----------------------------------------------------------------------------- }
 { Shared low-level utilities                                                    }
@@ -340,7 +343,7 @@ begin
       Continue;
 
     PropValue := Prop.GetValue(Obj);
-    Result.AddPair(Prop.Name, TValueToJson(PropValue));
+    Result.AddPair(GetJsonPropertyName(Prop), TValueToJson(PropValue));
   end;
 end;
 
@@ -845,4 +848,26 @@ begin
   );
 end;
 
+class function TJsonHelpers.GetJsonPropertyName(const Prop: TRttiProperty): string;
+var
+  Attribute: TCustomAttribute;
+  JsonName: JsonNameAttribute;
+begin
+  Result := Prop.Name;
+
+  for Attribute in Prop.GetAttributes do
+  begin
+    if Attribute is JsonNameAttribute then
+    begin
+      JsonName := JsonNameAttribute(Attribute);
+
+      if not JsonName.Name.Trim.IsEmpty then
+        Exit(JsonName.Name);
+
+      Exit(Prop.Name);
+    end;
+  end;
+end;
+
 end.
+

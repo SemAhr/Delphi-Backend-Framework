@@ -7,7 +7,7 @@ uses
   System.Generics.Collections;
 
 type
-  THttpRequest = class
+  TRequest = class
   private
     FMethod: string;
     FPath: string;
@@ -17,7 +17,6 @@ type
     FBody: string;
   public
     constructor Create;
-    
     destructor Destroy; override;
     
     property Method: string read FMethod write FMethod;
@@ -28,7 +27,7 @@ type
     property Body: string read FBody write FBody;
   end;
 
-  THttpResponse = class
+  TResponse = class
   private
     FStatusCode: Integer;
     FContentType: string;
@@ -36,9 +35,9 @@ type
   public
     constructor Create;
     
-    class function Json(const ABody: string; const AStatusCode: Integer = 200): THttpResponse; static;
+    class function Json(const ABody: string; const AStatusCode: Integer = 200): TResponse; static;
     
-    class function NoContent: THttpResponse; static;
+    class function NoContent: TResponse; static;
     
     property StatusCode: Integer read FStatusCode write FStatusCode;
     property ContentType: string read FContentType write FContentType;
@@ -49,7 +48,7 @@ implementation
 
 { THttpRequest }
 
-constructor THttpRequest.Create;
+constructor TRequest.Create;
 begin
   inherited Create;
 
@@ -58,7 +57,7 @@ begin
   FQueryParams := TDictionary<string, string>.Create;
 end;
 
-destructor THttpRequest.Destroy;
+destructor TRequest.Destroy;
 begin
   FHeaders.Free;
   FRouteParams.Free;
@@ -69,7 +68,7 @@ end;
 
 { THttpResponse }
 
-constructor THttpResponse.Create;
+constructor TResponse.Create;
 begin
   inherited Create;
   
@@ -77,17 +76,17 @@ begin
   FContentType := 'application/json; charset=utf-8';
 end;
 
-class function THttpResponse.Json(const ABody: string; const AStatusCode: Integer): THttpResponse;
+class function TResponse.Json(const ABody: string; const AStatusCode: Integer): TResponse;
 begin
-  Result := THttpResponse.Create;
+  Result := TResponse.Create;
   Result.StatusCode := AStatusCode;
   Result.ContentType := 'application/json; charset=utf-8';
   Result.Body := ABody;
 end;
 
-class function THttpResponse.NoContent: THttpResponse;
+class function TResponse.NoContent: TResponse;
 begin
-  Result := THttpResponse.Create;
+  Result := TResponse.Create;
   Result.StatusCode := 204;
   Result.Body := '';
 end;

@@ -4,16 +4,16 @@ interface
 
 uses
   System.Generics.Collections,
-  Container.Contract,
+  Container.Port,
   Http.RouteDescriptor,
-  Http.Router.Contract,
+  Http.Router.Port,
   Http.Server;
 
 type
   THttpComposition = class sealed
   public
     class function CreateDefaultRouter(const ARoutes: TObjectList<TRouteDescriptor>; const AContainer: IContainer): IRouter; static;
-    
+
     class function CreateDefaultServer(
       const APort: Integer;
       const ARoutes: TObjectList<TRouteDescriptor>;
@@ -25,14 +25,14 @@ implementation
 
 uses
   Dto.Binder,
-  Dto.Binder.Contract,
+  Dto.Binder.Port,
   Http.ActionInvoker,
-  Http.ActionInvoker.Contract,
+  Http.ActionInvoker.Port,
   Http.Router,
   Http.BodyBinder,
-  Http.BodyBinder.Contract,
+  Http.BodyBinder.Port,
   Http.ParameterBinder,
-  Http.ParameterBinder.Contract;
+  Http.ParameterBinder.Port;
 
 class function THttpComposition.CreateDefaultRouter(const ARoutes: TObjectList<TRouteDescriptor>; const AContainer: IContainer): IRouter;
 begin

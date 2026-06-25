@@ -8,29 +8,29 @@ uses
   System.Generics.Collections,
   Http.Core,
   Http.RouteDescriptor,
-  Http.Router.Contract,
-  Http.ActionInvoker.Contract;
+  Http.Router.Port,
+  Http.ActionInvoker.Port;
 
 type
   TRouter = class(TInterfacedObject, IRouter)
   private
     FRoutes: TObjectList<TRouteDescriptor>;
     FActionInvoker: IActionInvoker;
-    
+
     function SplitPath(const AValue: string): TArray<string>;
-    
+
     function MatchPath(
       const APattern: string;
       const APath: string;
       const AParams: TDictionary<string, string>
     ): Boolean;
-    
-    function InvokeRoute(const ARoute: TRouteDescriptor; const ARequest: THttpRequest): THttpResponse;
+
+    function InvokeRoute(const ARoute: TRouteDescriptor; const ARequest: TRequest): TResponse;
   public
     constructor Create(const ARoutes: TObjectList<TRouteDescriptor>; const AActionInvoker: IActionInvoker);
     destructor Destroy; override;
-    
-    function Dispatch(const ARequest: THttpRequest): THttpResponse;
+
+    function Dispatch(const ARequest: TRequest): TResponse;
   end;
 
 implementation
@@ -119,7 +119,7 @@ begin
   Result := True;
 end;
 
-function TRouter.InvokeRoute(const ARoute: TRouteDescriptor; const ARequest: THttpRequest): THttpResponse;
+function TRouter.InvokeRoute(const ARoute: TRouteDescriptor; const ARequest: TRequest): TResponse;
 var
   ReturnValue: TValue;
 begin
@@ -131,12 +131,21 @@ begin
   end;
 
   if ReturnValue.IsEmpty then
-    Exit(THttpResponse.NoContent);
+    Exit(TResponse.NoContent);
 
-  Result := ReturnValue.AsType<THttpResponse>;
+  if ReturnValue.Kind <> tkClass then
+    raise EInvalidAttributeException.CreateFmt(
+      'Invalid route return type. Expected %s, received %s.',
+      [
+        TResponse.ClassName,
+        ReturnValue.TypeInfo.Name
+      ]
+    );
+
+  Result := ReturnValue.AsType<TResponse>;
 end;
 
-function TRouter.Dispatch(const ARequest: THttpRequest): THttpResponse;
+function TRouter.Dispatch(const ARequest: TRequest): TResponse;
 begin
   for var Route in FRoutes do
   begin
@@ -147,10 +156,7 @@ begin
       Exit(InvokeRoute(Route, ARequest));
   end;
 
-  Result := THttpResponse.Json(
-    '{"error":"Route not found"}',
-    404
-  );
+  raise ENotFoundAppException.Create('Route not found');
 end;
 
 end.

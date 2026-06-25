@@ -837,29 +837,29 @@ A medida que crezca el proyecto, podrían agregarse módulos como:
 ```text
 BackendFramework/
   Configuration/
-    Configuration.Contract.pas
+    Configuration.Port.pas
     JsonConfigurationProvider.pas
     Options.pas
 
   Logging/
-    Logging.Contract.pas
+    Logging.Port.pas
     ConsoleLogger.pas
     NullLogger.pas
 
   Middleware/
-    Middleware.Contract.pas
+    Middleware.Port.pas
     Middleware.Pipeline.pas
     JsonContentTypeMiddleware.pas
     ExceptionHandlingMiddleware.pas
     LoggingMiddleware.pas
 
   Serialization/
-    JsonSerializer.Contract.pas
+    JsonSerializer.Port.pas
     JsonSerializer.pas
 
   OpenApi/
     OpenApi.Attributes.pas
-    OpenApi.Generator.Contract.pas
+    OpenApi.Generator.Port.pas
     OpenApi.Generator.pas
     OpenApi.SchemaGenerator.pas
 

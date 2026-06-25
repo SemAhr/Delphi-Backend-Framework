@@ -5,11 +5,11 @@ interface
 uses
   System.SysUtils,
   System.Rtti,
-  Container.Contract,
+  Container.Port,
   Http.Context,
   Http.RouteDescriptor,
-  Http.ParameterBinder.Contract,
-  Http.ActionInvoker.Contract;
+  Http.ParameterBinder.Port,
+  Http.ActionInvoker.Port;
 
 type
   TActionInvoker = class(TInterfacedObject, IActionInvoker)

@@ -7,14 +7,14 @@ uses
   System.Rtti,
   Http.Context,
   Http.ParameterDescriptor,
-  Http.BodyBinder.Contract,
-  Http.ParameterBinder.Contract;
+  Http.BodyBinder.Port,
+  Http.ParameterBinder.Port;
 
 type
   TParameterBinder = class(TInterfacedObject, IParameterBinder)
   private
     FBodyBinder: IBodyBinder;
-    
+
     function FromContext(const AContext: THttpContext; const ADescriptor: TParameterDescriptor): TValue;
     function FromRoute(const AContext: THttpContext; const ADescriptor: TParameterDescriptor): TValue;
     function FromQuery(const AContext: THttpContext; const ADescriptor: TParameterDescriptor): TValue;
@@ -22,7 +22,7 @@ type
     function FromBody(const AContext: THttpContext; const ADescriptor: TParameterDescriptor): TValue;
   public
     constructor Create(const ABodyBinder: IBodyBinder);
-    
+
     function Execute(const AContext: THttpContext; const ADescriptor: TParameterDescriptor): TValue;
   end;
 

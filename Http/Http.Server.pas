@@ -8,7 +8,7 @@ uses
   IdContext,
   IdCustomHTTPServer,
   Http.Core,
-  Http.Router.Contract;
+  Http.Router.Port;
 
 type
   THttpServer = class
@@ -21,14 +21,14 @@ type
       ARequestInfo: TIdHTTPRequestInfo;
       AResponseInfo: TIdHTTPResponseInfo
     );
-    
-    function BuildRequest(const ARequestInfo: TIdHTTPRequestInfo): THttpRequest;
-    
-    procedure WriteResponse(const AResponse: THttpResponse; const AResponseInfo: TIdHTTPResponseInfo);
+
+    function BuildRequest(const ARequestInfo: TIdHTTPRequestInfo): TRequest;
+
+    procedure WriteResponse(const AResponse: TResponse; const AResponseInfo: TIdHTTPResponseInfo);
   public
     constructor Create(const APort: Integer; const ARouter: IRouter);
     destructor Destroy; override;
-    
+
     procedure Start;
     procedure Stop;
   end;
@@ -37,7 +37,10 @@ implementation
 
 uses
   System.Classes,
-  AppExceptions;
+  System.StrUtils,
+  System.Math,
+  AppExceptions,
+  Json.Helpers;
 
 constructor THttpServer.Create(const APort: Integer; const ARouter: IRouter);
 begin
@@ -74,9 +77,9 @@ begin
     FServer.Active := False;
 end;
 
-function THttpServer.BuildRequest(const ARequestInfo: TIdHTTPRequestInfo): THttpRequest;
+function THttpServer.BuildRequest(const ARequestInfo: TIdHTTPRequestInfo): TRequest;
 begin
-  Result := THttpRequest.Create;
+  Result := TRequest.Create;
 
   Result.Method := UpperCase(ARequestInfo.Command);
   Result.Path := ARequestInfo.Document;
@@ -117,10 +120,22 @@ begin
   end;
 end;
 
-procedure THttpServer.WriteResponse(const AResponse: THttpResponse; const AResponseInfo: TIdHTTPResponseInfo);
+procedure THttpServer.WriteResponse(const AResponse: TResponse; const AResponseInfo: TIdHTTPResponseInfo);
 begin
-  AResponseInfo.ResponseNo := AResponse.StatusCode;
-  AResponseInfo.ContentType := AResponse.ContentType;
+  var ContentType := IfThen(
+    AResponse.ContentType.Trim.IsEmpty,
+    'application/json; charset=utf-8',
+    AResponse.ContentType
+  );
+
+  var StatusCode := IfThen(
+    AResponse.StatusCode <= 0,
+    AResponse.StatusCode,
+    200
+  );
+
+  AResponseInfo.ResponseNo := StatusCode;
+  AResponseInfo.ContentType := ContentType;
   AResponseInfo.ContentText := AResponse.Body;
 end;
 
@@ -130,8 +145,8 @@ procedure THttpServer.HandleCommand(
   AResponseInfo: TIdHTTPResponseInfo
 );
 var
-  Request: THttpRequest;
-  Response: THttpResponse;
+  Request: TRequest;
+  Response: TResponse;
 begin
   Request := nil;
   Response := nil;
@@ -143,13 +158,13 @@ begin
     except
       on E: Exception do
       begin
-        Response := THttpResponse.Json(
-          Format(
-            '{"error":"Internal server error","detail":"%s"}',
-            [StringReplace(E.Message, '"', '\"', [rfReplaceAll])]
-          ),
-          500
-        );
+//        Response := TResponse.Json(
+//          Format(
+//            '{"error":"Internal server error","detail":"%s"}',
+//            [StringReplace(E.Message, '"', '\"', [rfReplaceAll])]
+//          ),
+//          500
+//        );
       end;
     end;
 

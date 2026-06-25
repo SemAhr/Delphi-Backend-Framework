@@ -4,8 +4,8 @@ interface
 
 uses
   System.Rtti,
-  Http.BodyBinder.Contract,
-  Dto.Binder.Contract;
+  Http.BodyBinder.Port,
+  Dto.Binder.Port;
 
 type
   TBodyBinder = class(TInterfacedObject, IBodyBinder)
@@ -13,7 +13,7 @@ type
     FDtoBinder: IDtoBinder;
   public
     constructor Create(const ADtoBinder: IDtoBinder);
-    
+
     function Execute(const ARawBody: string; const ATargetType: TRttiType): TValue;
   end;
 

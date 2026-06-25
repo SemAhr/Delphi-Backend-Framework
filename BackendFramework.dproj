@@ -98,11 +98,11 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="Shared\Container\Container.Contract.pas"/>
+        <DCCReference Include="Shared\Container\Container.Port.pas"/>
         <DCCReference Include="Shared\Exceptions\AppExceptions.pas"/>
         <DCCReference Include="Shared\Exceptions\HttpExceptions.pas"/>
         <DCCReference Include="Dto\Attributes\Dto.Attributes.pas"/>
-        <DCCReference Include="Dto\Binding\Dto.Binder.Contract.pas"/>
+        <DCCReference Include="Dto\Binding\Dto.Binder.Port.pas"/>
         <DCCReference Include="Dto\Binding\Dto.Binder.pas"/>
         <DCCReference Include="Dto\Validation\Dto.Metadata.pas"/>
         <DCCReference Include="Dto\Validation\Dto.TypeInspector.pas"/>
@@ -112,14 +112,14 @@
         <DCCReference Include="Dto\Validation\Validators\Dto.Validation.NumberValidator.pas"/>
         <DCCReference Include="Dto\Validation\Validators\Dto.Validation.RequiredValidator.pas"/>
         <DCCReference Include="Dto\Validation\Validators\Dto.Validation.StringValidator.pas"/>
-        <DCCReference Include="Http\Controllers\Http.Controller.Contract.pas"/>
+        <DCCReference Include="Http\Controllers\Http.Controller.Port.pas"/>
         <DCCReference Include="Http\Attributes\Http.Attributes.pas"/>
         <DCCReference Include="Http\Http.Core.pas"/>
         <DCCReference Include="Http\Context\Http.Context.pas"/>
         <DCCReference Include="Http\Routing\Http.RouteDescriptor.pas"/>
-        <DCCReference Include="Http\Routing\Http.Router.Contract.pas"/>
+        <DCCReference Include="Http\Routing\Http.Router.Port.pas"/>
         <DCCReference Include="Http\Routing\Http.ControllerScanner.pas"/>
-        <DCCReference Include="Http\Routing\Http.ActionInvoker.Contract.pas"/>
+        <DCCReference Include="Http\Routing\Http.ActionInvoker.Port.pas"/>
         <DCCReference Include="Http\Routing\Http.Router.pas"/>
         <DCCReference Include="Http\Routing\Http.ActionInvoker.pas"/>
         <DCCReference Include="Http\Http.Server.pas"/>
@@ -128,8 +128,8 @@
         <DCCReference Include="Http\Parameters\Http.ParameterDescriptor.pas"/>
         <DCCReference Include="Http\Parameters\Http.ActionMetadata.pas"/>
         <DCCReference Include="Http\Parameters\Http.ValueConverter.pas"/>
-        <DCCReference Include="Http\Parameters\Http.BodyBinder.Contract.pas"/>
-        <DCCReference Include="Http\Parameters\Http.ParameterBinder.Contract.pas"/>
+        <DCCReference Include="Http\Parameters\Http.BodyBinder.Port.pas"/>
+        <DCCReference Include="Http\Parameters\Http.ParameterBinder.Port.pas"/>
         <DCCReference Include="Http\Parameters\Http.BodyBinder.pas"/>
         <DCCReference Include="Http\Parameters\Http.ParameterBinder.pas"/>
         <DCCReference Include="Http\Http.Composition.pas"/>
@@ -141,13 +141,14 @@
         <DCCReference Include="Shared\Helpers\Path.Helpers.pas"/>
         <DCCReference Include="Shared\Helpers\RttiAttribute.Helpers.pas"/>
         <DCCReference Include="Shared\Helpers\StringArray.Helpers.pas"/>
-        <DCCReference Include="Shared\Options\Options.Contract.pas"/>
-        <DCCReference Include="Shared\Logging\Logger.Contract.pas"/>
+        <DCCReference Include="Shared\Options\Options.Port.pas"/>
+        <DCCReference Include="Shared\Logging\Logger.Port.pas"/>
         <DCCReference Include="Src\Presentation\Controllers\Auth.Controller.pas"/>
         <DCCReference Include="Src\Domain\Jwt.Entity.pas"/>
         <DCCReference Include="Src\Domain\Role.pas"/>
         <DCCReference Include="Src\Bootstrap.pas"/>
         <DCCReference Include="Dto\Context\Dto.Binder.Context.pas"/>
+        <DCCReference Include="Dto\Contracts\Error.Dto.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

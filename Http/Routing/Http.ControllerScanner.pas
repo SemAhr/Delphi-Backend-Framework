@@ -7,7 +7,7 @@ uses
   System.Rtti,
   System.Generics.Collections,
   Http.Attributes,
-  Http.Controller.Contract,
+  Http.Controller.Port,
   Http.RouteDescriptor;
 
 type
@@ -20,7 +20,7 @@ type
     function ImplementsHttpController(const ARttiType: TRttiType): Boolean;
   public
     constructor Create;
-    
+
     function Execute(const AControllerClasses: array of TClass): TObjectList<TRouteDescriptor>;
   end;
 
