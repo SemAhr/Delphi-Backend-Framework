@@ -8,13 +8,16 @@ uses
   IdContext,
   IdCustomHTTPServer,
   Http.Core,
-  Http.Router.Port;
+  Http.Router.Port,
+  Error.Dto;
 
 type
   THttpServer = class
   private
     FServer: TIdHTTPServer;
     FRouter: IRouter;
+
+    function HandleError(const Error: string; const Messages: TArray<string>): string;
 
     procedure HandleCommand(
       AContext: TIdContext;
@@ -41,8 +44,7 @@ uses
   System.Math,
   HttpExceptions,
   AppExceptions,
-  Json.Helpers,
-  Error.Dto;
+  Json.Helpers;
 
 constructor THttpServer.Create(const APort: Integer; const ARouter: IRouter);
 begin
@@ -132,13 +134,22 @@ begin
 
   var StatusCode := IfThen(
     AResponse.StatusCode <= 0,
-    AResponse.StatusCode,
-    200
+    200,
+    AResponse.StatusCode
   );
 
   AResponseInfo.ResponseNo := StatusCode;
   AResponseInfo.ContentType := ContentType;
   AResponseInfo.ContentText := AResponse.Body;
+end;
+
+function THttpServer.HandleError(const Error: string; const Messages: TArray<string>): string;
+begin
+  var Response := TErrorDto.Create;
+  Response.Error := Error;
+  Response.Messages := Messages;
+
+  Result := TJsonHelpers.ToString(Response);
 end;
 
 procedure THttpServer.HandleCommand(
@@ -160,24 +171,14 @@ begin
     except
       on Error: EHttpException do
       begin
-
+        Response.StatusCode := Error.StatusCode;
+        Response.Body := HandleError(Error.ErrorName, Error.Messages);
       end;
 
       on Error: Exception do
       begin
-        var ErrorResponse := TErrorDto.Create;
-
-        try
-          ErrorResponse.Error := 'Internal Server Error';
-          ErrorResponse.Messages := [Error.Message];
-
-          Response := TResponse.Json(
-            TJsonHelpers.ToString(ErrorResponse),
-            500
-          );
-        finally
-          ErrorResponse.Free;
-        end;
+        Response.StatusCode := 500;
+        Response.Body := HandleError('Internal Server Error', [Error.Message]);
       end;
     end;
 

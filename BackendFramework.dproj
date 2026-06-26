@@ -99,6 +99,9 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="Shared\Container\Container.Port.pas"/>
+        <DCCReference Include="Shared\Container\Container.ServiceDescriptor.pas"/>
+        <DCCReference Include="Shared\Container\Container.App.pas"/>
+        <DCCReference Include="Shared\Container\Container.Scope.pas"/>
         <DCCReference Include="Shared\Exceptions\AppExceptions.pas"/>
         <DCCReference Include="Shared\Exceptions\HttpExceptions.pas"/>
         <DCCReference Include="Dto\Attributes\Dto.Attributes.pas"/>
@@ -149,6 +152,7 @@
         <DCCReference Include="Src\Bootstrap.pas"/>
         <DCCReference Include="Dto\Context\Dto.Binder.Context.pas"/>
         <DCCReference Include="Dto\Contracts\Error.Dto.pas"/>
+        <DCCReference Include="Dto\Ports\Dto.Port.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

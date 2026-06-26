@@ -6,7 +6,8 @@ uses
   System.Rtti,
   System.JSON,
   Dto.Binder.Context,
-  Dto.Binder.Port;
+  Dto.Binder.Port,
+  Dto.Port;
 
 type
   TDtoBinder = class(TInterfacedObject, IDtoBinder)
@@ -57,10 +58,10 @@ type
     procedure ParseDto(
       const ARawBody: string;
       const ADtoClass: TClass;
-      out ADto: TObject
+      out ADto: IDto
     ); overload;
 
-    function ParseDto<T: class>(const ARawBody: string): T; overload;
+    function ParseDto<T: IDto>(const ARawBody: string): T; overload;
   end;
 
 implementation
@@ -539,12 +540,13 @@ end;
 procedure TDtoBinder.ParseDto(
   const ARawBody: string;
   const ADtoClass: TClass;
-  out ADto: TObject
+  out ADto: IDto
 );
 var
   RootValue: TJSONValue;
   RootObject: TJSONObject;
   BindingContext: TDtoBindingContext;
+  DtoInstance: TObject;
 begin
   ADto := nil;
 
@@ -555,28 +557,36 @@ begin
     raise EInvalidAttributeException.Create('body must be a JSON object');
 
   RootValue := nil;
+  DtoInstance := nil;
   BindingContext := TDtoBindingContext.Create;
 
   try
     RootValue := TJSONObject.ParseJSONValue(ARawBody);
 
     if (RootValue = nil) or not (RootValue is TJSONObject) then
-      raise EBinderException.Create('body must be a JSON object');
+      raise EBadRequestAppException.Create('body must be a JSON object');
 
     RootObject := TJSONObject(RootValue);
-    ADto := ADtoClass.Create;
+    DtoInstance := ADtoClass.Create;
 
     try
+      if not Supports(DtoInstance, IDto, ADto) then
+        raise EInvalidAttributeException.CreateFmt(
+          'DTO class "%s" must implement IDto.',
+          [ADtoClass.ClassName]
+        );
+
       BindObject(
         RootObject,
-        ADto,
+        DtoInstance,
         BindingContext
       );
 
       BindingContext.RaiseIfHasErrors;
+      DtoInstance := nil;
     except
-      ADto.Free;
       ADto := nil;
+      DtoInstance.Free;
       raise;
     end;
   finally
@@ -590,18 +600,18 @@ var
   RttiContext: TRttiContext;
   RttiType: TRttiType;
   InstanceType: TRttiInstanceType;
-  Dto: TObject;
+  Dto: IDto;
 begin
   RttiContext := TRttiContext.Create;
   RttiType := RttiContext.GetType(TypeInfo(T));
 
   if not (RttiType is TRttiInstanceType) then
-    raise EInvalidAttributeException.Create('Generic type must be a class');
+    raise EInvalidAttributeException.Create('Generic type must be a concrete class that implements IDto');
 
   InstanceType := TRttiInstanceType(RttiType);
 
   ParseDto(ARawBody, InstanceType.MetaclassType, Dto);
-  Result := Dto as T;
+  Result := Dto;
 end;
 
 end.

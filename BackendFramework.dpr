@@ -7,6 +7,9 @@ program BackendFramework;
 uses
   System.SysUtils,
   Container.Port in 'Shared\Container\Container.Port.pas',
+  Container.ServiceDescriptor in 'Shared\Container\Container.ServiceDescriptor.pas',
+  Container.App in 'Shared\Container\Container.App.pas',
+  Container.Scope in 'Shared\Container\Container.Scope.pas',
   AppExceptions in 'Shared\Exceptions\AppExceptions.pas',
   HttpExceptions in 'Shared\Exceptions\HttpExceptions.pas',
   Dto.Attributes in 'Dto\Attributes\Dto.Attributes.pas',
@@ -56,7 +59,8 @@ uses
   Role in 'Src\Domain\Role.pas',
   Bootstrap in 'Src\Bootstrap.pas',
   Dto.Binder.Context in 'Dto\Context\Dto.Binder.Context.pas',
-  Error.Dto in 'Dto\Contracts\Error.Dto.pas';
+  Error.Dto in 'Dto\Contracts\Error.Dto.pas',
+  Dto.Port in 'Dto\Ports\Dto.Port.pas';
 
 begin
   try

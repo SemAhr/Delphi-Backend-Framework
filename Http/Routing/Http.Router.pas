@@ -6,6 +6,7 @@ uses
   System.SysUtils,
   System.Rtti,
   System.Generics.Collections,
+  Container.Port,
   Http.Core,
   Http.RouteDescriptor,
   Http.Router.Port,
@@ -16,6 +17,7 @@ type
   private
     FRoutes: TObjectList<TRouteDescriptor>;
     FActionInvoker: IActionInvoker;
+    FContainer: IContainer;
 
     function SplitPath(const AValue: string): TArray<string>;
 
@@ -27,7 +29,11 @@ type
 
     function InvokeRoute(const ARoute: TRouteDescriptor; const ARequest: TRequest): TResponse;
   public
-    constructor Create(const ARoutes: TObjectList<TRouteDescriptor>; const AActionInvoker: IActionInvoker);
+    constructor Create(
+      const ARoutes: TObjectList<TRouteDescriptor>;
+      const AActionInvoker: IActionInvoker;
+      const AContainer: IContainer
+    );
     destructor Destroy; override;
 
     function Dispatch(const ARequest: TRequest): TResponse;
@@ -37,9 +43,16 @@ implementation
 
 uses
   AppExceptions,
-  Http.Context;
+  Http.Attributes,
+  Http.Context,
+  Dto.Port,
+  Json.Helpers;
 
-constructor TRouter.Create(const ARoutes: TObjectList<TRouteDescriptor>; const AActionInvoker: IActionInvoker);
+constructor TRouter.Create(
+  const ARoutes: TObjectList<TRouteDescriptor>;
+  const AActionInvoker: IActionInvoker;
+  const AContainer: IContainer
+);
 begin
   inherited Create;
 
@@ -49,8 +62,12 @@ begin
   if AActionInvoker = nil then
     raise EMissingDependencyException.Create('Action invoker is required.');
 
+  if AContainer = nil then
+    raise EMissingDependencyException.Create('Container is required.');
+
   FRoutes := ARoutes;
   FActionInvoker := AActionInvoker;
+  FContainer := AContainer;
 end;
 
 destructor TRouter.Destroy;
@@ -122,8 +139,23 @@ end;
 function TRouter.InvokeRoute(const ARoute: TRouteDescriptor; const ARequest: TRequest): TResponse;
 var
   ReturnValue: TValue;
+  ReturnedObject: TObject;
+  Response: TResponse;
+  StatusCode: Integer;
 begin
-  var Context := THttpContext.Create(ARequest);
+  StatusCode := 0;
+
+  for var Attribute in ARoute.MethodInfo.GetAttributes do
+  begin
+    if Attribute is StatusCodeAttribute then
+    begin
+      StatusCode := StatusCodeAttribute(Attribute).StatusCode;
+      Break;
+    end;
+  end;
+
+  var Scope := FContainer.CreateScope;
+  var Context := TContext.Create(ARequest, Scope);
   try
     ReturnValue := FActionInvoker.Execute(ARoute, Context);
   finally
@@ -131,18 +163,53 @@ begin
   end;
 
   if ReturnValue.IsEmpty then
-    Exit(TResponse.NoContent);
+  begin
+    Response := TResponse.NoContent;
+
+    if StatusCode > 0 then
+      Response.StatusCode := StatusCode;
+
+    Exit(Response);
+  end;
 
   if ReturnValue.Kind <> tkClass then
     raise EInvalidAttributeException.CreateFmt(
-      'Invalid route return type. Expected %s, received %s.',
+      'Invalid route return type. Expected %s or IDto, received %s.',
       [
         TResponse.ClassName,
         ReturnValue.TypeInfo.Name
       ]
     );
 
-  Result := ReturnValue.AsType<TResponse>;
+  ReturnedObject := ReturnValue.AsObject;
+
+  if ReturnedObject = nil then
+  begin
+    Response := TResponse.NoContent;
+
+    if StatusCode > 0 then
+      Response.StatusCode := StatusCode;
+
+    Exit(Response);
+  end;
+
+  if ReturnedObject is TResponse then
+    Response := TResponse(ReturnedObject)
+  else if Supports(ReturnedObject, IDto) then
+    Response := TResponse.Json(TJsonHelpers.ToString(ReturnedObject))
+  else
+    raise EInvalidAttributeException.CreateFmt(
+      'Invalid route return type. Expected %s or an object implementing IDto, received %s.',
+      [
+        TResponse.ClassName,
+        ReturnedObject.ClassName
+      ]
+    );
+
+  if StatusCode > 0 then
+    Response.StatusCode := StatusCode;
+
+  Result := Response;
 end;
 
 function TRouter.Dispatch(const ARequest: TRequest): TResponse;

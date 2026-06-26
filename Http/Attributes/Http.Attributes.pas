@@ -11,7 +11,7 @@ type
     FPath: string;
   public
     constructor Create(const APath: string);
-    
+
     property Path: string read FPath;
   end;
 
@@ -48,6 +48,14 @@ type
   DeleteAttribute = class(HttpMethodAttribute)
   public
     constructor Create(const APath: string = '');
+  end;
+
+  StatusCodeAttribute = class(TCustomAttribute)
+  private
+    FStatusCode: Integer;
+  public
+    constructor Create(const AStatusCode: Integer);
+    property StatusCode: Integer read FStatusCode;
   end;
 
 implementation
@@ -102,6 +110,14 @@ end;
 constructor DeleteAttribute.Create(const APath: string);
 begin
   inherited Create('DELETE', APath);
+end;
+
+{ StatusCodeAttribute }
+
+constructor StatusCodeAttribute.Create(const AStatusCode: Integer);
+begin
+  inherited Create;
+  FStatusCode := AStatusCode;
 end;
 
 end.

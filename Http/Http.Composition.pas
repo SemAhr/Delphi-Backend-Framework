@@ -42,7 +42,7 @@ begin
 
   var ActionInvoker := TActionInvoker.Create(AContainer, ParameterBinder);
 
-  Result := TRouter.Create(ARoutes, ActionInvoker);
+  Result := TRouter.Create(ARoutes, ActionInvoker, AContainer);
 end;
 
 class function THttpComposition.CreateDefaultServer(

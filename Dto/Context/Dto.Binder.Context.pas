@@ -66,7 +66,7 @@ begin
   if ErrorCount = 0 then
     Exit;
 
-  raise EBinderException.Create(FErrors.ToArray);
+  raise EBadRequestAppException.Create(FErrors.ToArray);
 end;
 
 end.

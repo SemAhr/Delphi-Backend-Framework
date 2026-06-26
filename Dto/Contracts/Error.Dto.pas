@@ -3,10 +3,11 @@ unit Error.Dto;
 interface
 
 uses
+  Dto.Port,
   Dto.Attributes;
 
 type
-  TErrorDto = class
+  TErrorDto = class(TInterfacedObject, IDto)
   private
     FError: string;
     FMessages: TArray<string>;

@@ -17,7 +17,7 @@ type
 
     function GetControllerBasePath(const ARttiType: TRttiType): string;
     function CombinePaths(const ABasePath, AMethodPath: string): string;
-    function ImplementsHttpController(const ARttiType: TRttiType): Boolean;
+    function ImplementsController(const ARttiType: TRttiType): Boolean;
   public
     constructor Create;
 
@@ -68,7 +68,7 @@ begin
   Result := BasePath + MethodPath;
 end;
 
-function TControllerScanner.ImplementsHttpController(const ARttiType: TRttiType): Boolean;
+function TControllerScanner.ImplementsController(const ARttiType: TRttiType): Boolean;
 begin
   Result := False;
 
@@ -79,7 +79,7 @@ begin
 
   for var InterfaceType in InstanceType.GetImplementedInterfaces do
   begin
-    if InterfaceType.GUID = IHttpController then
+    if InterfaceType.GUID = IController then
       Exit(True);
   end;
 end;
@@ -95,9 +95,9 @@ begin
       begin
         var ControllerType := FRttiContext.GetType(ControllerClass);
 
-        if not ImplementsHttpController(ControllerType) then
+        if not ImplementsController(ControllerType) then
           raise Exception.CreateFmt(
-            'Controller "%s" must implement IHttpController.',
+            'Controller "%s" must implement IController.',
             [ControllerClass.ClassName]
           );
 

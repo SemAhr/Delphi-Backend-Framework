@@ -19,7 +19,7 @@ type
   public
     constructor Create(const AContainer: IContainer; const AParameterBinder: IParameterBinder);
 
-    function Execute(const ARoute: TRouteDescriptor; const AContext: THttpContext): TValue;
+    function Execute(const ARoute: TRouteDescriptor; const AContext: TContext): TValue;
   end;
 
 implementation
@@ -41,11 +41,16 @@ begin
   FParameterBinder := AParameterBinder;
 end;
 
-function TActionInvoker.Execute(const ARoute: TRouteDescriptor; const AContext: THttpContext): TValue;
+function TActionInvoker.Execute(const ARoute: TRouteDescriptor; const AContext: TContext): TValue;
 var
   Arguments: TArray<TValue>;
 begin
-  var Controller := FContainer.Resolve(ARoute.ControllerType.Handle);
+  var Resolver := AContext.Services;
+
+  if Resolver = nil then
+    Resolver := FContainer;
+
+  var Controller := Resolver.Resolve(ARoute.ControllerType.Handle);
 
   if Controller = nil then
     raise EMissingDependencyException.CreateFmt(

@@ -15,19 +15,14 @@ type
   EInvalidDependencyException = class(EDependencyException);
 
   EInfrastructureUnavailableException = class(EServiceException);
-  EDatabaseException = class(EServiceException);
-  EBadRequestAppException = class(EServiceException);
+  EControllerException = class(EServiceException);
+
   EUnauthorizedAppException = class(EServiceException);
   EForbiddenAppException = class(EServiceException);
   ENotFoundAppException = class(EServiceException);
   EConflictAppException = class(EServiceException);
   EBadGatewayAppException = class(EServiceException);
-  EJwtException = class(EServiceException);
-  ERefreshTokenException = class(EServiceException);
-  ESignException = class(EServiceException);
-  ESessionException = class(EServiceException);
-  EControllerException = class(EServiceException);
-  EBinderException = class(EServiceException)
+  EBadRequestAppException = class(EServiceException)
   private
     function GetMessages: TArray<string>;
   public
@@ -37,6 +32,7 @@ type
     constructor Create(const Messages: TArray<string>); overload;
   end;
 
+
   EMissingAttributeException = class(EMetadataException);
   EInvalidAttributeException = class(EMetadataException);
   EUnexpectedAttributeException = class(EMetadataException);
@@ -45,19 +41,19 @@ type
 
 implementation
 
-{ EBinderException }
+{ EBadRequestAppException }
 
-constructor EBinderException.Create(const Message: string);
+constructor EBadRequestAppException.Create(const Message: string);
 begin
   inherited Create(Message);
 end;
 
-constructor EBinderException.Create(const Messages: TArray<string>);
+constructor EBadRequestAppException.Create(const Messages: TArray<string>);
 begin
   inherited Create(string.Join(',', Messages));
 end;
 
-function EBinderException.GetMessages: TArray<string>;
+function EBadRequestAppException.GetMessages: TArray<string>;
 begin
   Result := Message.Split([',']);
 end;
