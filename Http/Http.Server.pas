@@ -39,8 +39,10 @@ uses
   System.Classes,
   System.StrUtils,
   System.Math,
+  HttpExceptions,
   AppExceptions,
-  Json.Helpers;
+  Json.Helpers,
+  Error.Dto;
 
 constructor THttpServer.Create(const APort: Integer; const ARouter: IRouter);
 begin
@@ -156,15 +158,26 @@ begin
       Request := BuildRequest(ARequestInfo);
       Response := FRouter.Dispatch(Request);
     except
-      on E: Exception do
+      on Error: EHttpException do
       begin
-//        Response := TResponse.Json(
-//          Format(
-//            '{"error":"Internal server error","detail":"%s"}',
-//            [StringReplace(E.Message, '"', '\"', [rfReplaceAll])]
-//          ),
-//          500
-//        );
+
+      end;
+
+      on Error: Exception do
+      begin
+        var ErrorResponse := TErrorDto.Create;
+
+        try
+          ErrorResponse.Error := 'Internal Server Error';
+          ErrorResponse.Messages := [Error.Message];
+
+          Response := TResponse.Json(
+            TJsonHelpers.ToString(ErrorResponse),
+            500
+          );
+        finally
+          ErrorResponse.Free;
+        end;
       end;
     end;
 
