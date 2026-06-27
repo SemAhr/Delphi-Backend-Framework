@@ -4,6 +4,7 @@ interface
 
 uses
   System.Generics.Collections,
+  Container.App,
   Container.Port,
   Http.RouteDescriptor,
   Http.Router.Port,
@@ -18,16 +19,23 @@ type
       const APort: Integer;
       const ARoutes: TObjectList<TRouteDescriptor>;
       const AContainer: IContainer
-    ): THttpServer; static;
+    ): THttpServer; overload; static;
+
+    class function CreateDefaultServer(
+      const APort: Integer;
+      const AContainer: TAppContainer
+    ): THttpServer; overload; static;
   end;
 
 implementation
 
 uses
+  AppExceptions,
   Dto.Binder,
   Dto.Binder.Port,
   Http.ActionInvoker,
   Http.ActionInvoker.Port,
+  Http.ControllerScanner,
   Http.Router,
   Http.BodyBinder,
   Http.BodyBinder.Port,
@@ -55,6 +63,32 @@ begin
     APort,
     THttpComposition.CreateDefaultRouter(ARoutes, AContainer)
   );
+end;
+
+class function THttpComposition.CreateDefaultServer(
+  const APort: Integer;
+  const AContainer: TAppContainer
+): THttpServer;
+var
+  Scanner: TControllerScanner;
+  Routes: TObjectList<TRouteDescriptor>;
+begin
+  if AContainer = nil then
+    raise EMissingDependencyException.Create('Container is required.');
+
+  Scanner := TControllerScanner.Create;
+  try
+    Routes := Scanner.Execute(AContainer.GetControllerTypes);
+  finally
+    Scanner.Free;
+  end;
+
+  try
+    Result := THttpComposition.CreateDefaultServer(APort, Routes, AContainer);
+  except
+    Routes.Free;
+    raise;
+  end;
 end;
 
 end.

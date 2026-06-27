@@ -7,19 +7,24 @@ uses
   System.Rtti,
   System.Generics.Collections,
   Container.Port,
-  Container.ServiceDescriptor;
+  Container.ServiceDescriptor,
+  Http.Controller.Port;
 
 type
   TAppContainer = class(TInterfacedObject, IContainer)
   private
     FDescriptors: TObjectDictionary<PTypeInfo, TServiceDescriptor>;
+    FControllerTypes: TList<TClass>;
 
+    function GetClassType(const ATypeInfo: PTypeInfo): TClass;
     procedure AddDescriptor(const ADescriptor: TServiceDescriptor);
     function FindConstructor(const AImplementationType: TClass): TRttiMethod;
     function ResolveConstructorParameter(const AParameter: TRttiParameter; const AResolver: IContainer): TValue;
   public
     constructor Create;
     destructor Destroy; override;
+
+    function GetControllerTypes: TArray<TClass>;
 
     function CreateInstance(const ADescriptor: TServiceDescriptor; const AResolver: IContainer): TObject;
     function GetDescriptor(const ATypeInfo: PTypeInfo): TServiceDescriptor;
@@ -28,8 +33,16 @@ type
 
     procedure AddSingleton(const ATypeInfo: PTypeInfo; const AImplementationType: TClass); overload;
     procedure AddSingleton(const ATypeInfo: PTypeInfo; const AInstance: TObject); overload;
-    procedure AddTransient(const ATypeInfo: PTypeInfo; const AImplementationType: TClass);
-    procedure AddScoped(const ATypeInfo: PTypeInfo; const AImplementationType: TClass);
+    procedure AddSingleton<TService; TImplementation: class>; overload;
+
+    procedure AddTransient(const ATypeInfo: PTypeInfo; const AImplementationType: TClass); overload;
+    procedure AddTransient<TService; TImplementation: class>; overload;
+
+    procedure AddScoped(const ATypeInfo: PTypeInfo; const AImplementationType: TClass); overload;
+    procedure AddScoped<TService; TImplementation: class>; overload;
+
+    procedure AddController(const AControllerType: TClass); overload;
+    procedure AddController<TController: class, IController>; overload;
     procedure AddFactory(
       const ATypeInfo: PTypeInfo;
       const AFactory: TServiceFactory;
@@ -51,12 +64,50 @@ constructor TAppContainer.Create;
 begin
   inherited Create;
   FDescriptors := TObjectDictionary<PTypeInfo, TServiceDescriptor>.Create([doOwnsValues]);
+  FControllerTypes := TList<TClass>.Create;
 end;
 
 destructor TAppContainer.Destroy;
 begin
+  FControllerTypes.Free;
   FDescriptors.Free;
   inherited;
+end;
+
+function TAppContainer.GetClassType(const ATypeInfo: PTypeInfo): TClass;
+begin
+  if (ATypeInfo = nil) or (ATypeInfo.Kind <> tkClass) then
+    raise EMissingDependencyException.Create('Class type info is required.');
+
+  Result := GetTypeData(ATypeInfo).ClassType;
+end;
+
+function TAppContainer.GetControllerTypes: TArray<TClass>;
+begin
+  Result := FControllerTypes.ToArray;
+end;
+
+function ImplementsControllerContract(const AControllerType: TClass): Boolean;
+var
+  RttiContext: TRttiContext;
+  RttiType: TRttiType;
+begin
+  Result := False;
+
+  if AControllerType = nil then
+    Exit;
+
+  RttiContext := TRttiContext.Create;
+  RttiType := RttiContext.GetType(AControllerType);
+
+  if not (RttiType is TRttiInstanceType) then
+    Exit;
+
+  for var InterfaceType in TRttiInstanceType(RttiType).GetImplementedInterfaces do
+  begin
+    if InterfaceType.GUID = IController then
+      Exit(True);
+  end;
 end;
 
 procedure TAppContainer.AddDescriptor(const ADescriptor: TServiceDescriptor);
@@ -232,12 +283,49 @@ begin
   AddDescriptor(TServiceDescriptor.Create(ATypeInfo, AImplementationType, nil, slTransient));
 end;
 
+procedure TAppContainer.AddTransient<TService, TImplementation>;
+begin
+  AddTransient(TypeInfo(TService), GetClassType(TypeInfo(TImplementation)));
+end;
+
 procedure TAppContainer.AddScoped(const ATypeInfo: PTypeInfo; const AImplementationType: TClass);
 begin
   if AImplementationType = nil then
     raise EMissingDependencyException.Create('Implementation type is required.');
 
   AddDescriptor(TServiceDescriptor.Create(ATypeInfo, AImplementationType, nil, slScoped));
+end;
+
+procedure TAppContainer.AddScoped<TService, TImplementation>;
+begin
+  AddScoped(TypeInfo(TService), GetClassType(TypeInfo(TImplementation)));
+end;
+
+procedure TAppContainer.AddSingleton<TService, TImplementation>;
+begin
+  AddSingleton(TypeInfo(TService), GetClassType(TypeInfo(TImplementation)));
+end;
+
+procedure TAppContainer.AddController(const AControllerType: TClass);
+begin
+  if AControllerType = nil then
+    raise EMissingDependencyException.Create('Controller type is required.');
+
+  if not ImplementsControllerContract(AControllerType) then
+    raise EMissingDependencyException.CreateFmt(
+      'Controller "%s" must implement IController.',
+      [AControllerType.ClassName]
+    );
+
+  AddTransient(AControllerType.ClassInfo, AControllerType);
+
+  if FControllerTypes.IndexOf(AControllerType) < 0 then
+    FControllerTypes.Add(AControllerType);
+end;
+
+procedure TAppContainer.AddController<TController>;
+begin
+  AddController(GetClassType(TypeInfo(TController)));
 end;
 
 procedure TAppContainer.AddFactory(

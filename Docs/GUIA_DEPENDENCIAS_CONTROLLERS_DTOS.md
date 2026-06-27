@@ -108,11 +108,17 @@ var
 begin
   Container := TAppContainer.Create;
   try
-    Container.AddScoped(TypeInfo(IAuthService), TAuthService);
+    Container.AddScoped<IAuthService, TAuthService>;
   finally
     Container.Free;
   end;
 end.
+```
+
+También puedes usar la API basada en RTTI si necesitas registrar dinámicamente:
+
+```pas
+Container.AddScoped(TypeInfo(IAuthService), TAuthService);
 ```
 
 ---
@@ -122,10 +128,16 @@ end.
 ### 4.1. Singleton lazy por tipo
 
 ```pas
-Container.AddSingleton(TypeInfo(ILogger), TConsoleLogger);
+Container.AddSingleton<ILogger, TConsoleLogger>;
 ```
 
 La instancia se crea hasta la primera vez que se resuelve.
+
+Forma equivalente basada en RTTI:
+
+```pas
+Container.AddSingleton(TypeInfo(ILogger), TConsoleLogger);
+```
 
 ### 4.2. Singleton por instancia
 
@@ -138,15 +150,21 @@ La instancia ya existe al registrarla. El contenedor toma ownership y la libera 
 ### 4.3. Transient
 
 ```pas
-Container.AddTransient(TypeInfo(TAuthController), TAuthController);
+Container.AddTransient<IAuthService, TAuthService>;
 ```
 
 Cada `Resolve` crea una nueva instancia.
 
+Para controllers, usa preferentemente `AddController`:
+
+```pas
+Container.AddController<TAuthController>;
+```
+
 ### 4.4. Scoped
 
 ```pas
-Container.AddScoped(TypeInfo(IAuthService), TAuthService);
+Container.AddScoped<IAuthService, TAuthService>;
 ```
 
 Cada request obtiene una instancia propia dentro de su scope.
@@ -210,8 +228,8 @@ end;
 Registro:
 
 ```pas
-Container.AddScoped(TypeInfo(IAuthService), TAuthService);
-Container.AddTransient(TypeInfo(TAuthController), TAuthController);
+Container.AddScoped<IAuthService, TAuthService>;
+Container.AddController<TAuthController>;
 ```
 
 Cuando el framework resuelva `TAuthController`, el contenedor resolverá automáticamente `IAuthService`.
@@ -238,7 +256,7 @@ Para esos casos usa `AddFactory`.
 
 ## 6. Declarar controllers
 
-Todo controller debe implementar `IController`:
+Todo controller debe implementar `IController`. Ese contrato marca explícitamente qué clases pueden ser tratadas como controllers por el framework.
 
 ```pas
 uses
@@ -249,7 +267,7 @@ type
   end;
 ```
 
-Además, debe usar atributos HTTP para declarar rutas.
+Además, debe registrarse con `AddController` y usar atributos HTTP para declarar rutas.
 
 ### 6.1. Controller básico
 
@@ -346,24 +364,24 @@ function Search(
 
 ## 7. Registrar controllers
 
-Los controllers deben registrarse en el contenedor, normalmente como `transient`:
+Los controllers deben registrarse con `AddController`:
 
 ```pas
-Container.AddTransient(TypeInfo(TAuthController), TAuthController);
+Container.AddController<TAuthController>;
 ```
 
-Luego deben pasarse al scanner para descubrir rutas:
+`AddController` hace dos cosas:
 
-```pas
-Routes := Scanner.Execute([
-  TAuthController
-]);
-```
+1. Valida que la clase implemente `IController`.
+2. La registra como `transient` para que se cree una instancia nueva por request.
+
+Además, el contenedor conserva la lista de controllers registrados para que `Http.Composition` pueda descubrir las rutas automáticamente.
 
 Importante:
 
 - El scanner usa la clase para descubrir rutas.
 - No necesita una instancia del controller.
+- No tienes que llamar manualmente a `Scanner.Execute` si usas `THttpComposition.CreateDefaultServer(APort, Container)`.
 - El controller se crea cuando entra la request.
 
 ---
@@ -492,11 +510,8 @@ Ejemplo conceptual:
 ```pas
 uses
   System.SysUtils,
-  System.Generics.Collections,
   Container.App,
   Container.Port,
-  Http.ControllerScanner,
-  Http.RouteDescriptor,
   Http.Http.Composition,
   Http.Http.Server,
   Auth.Controller,
@@ -505,26 +520,17 @@ uses
 
 var
   Container: TAppContainer;
-  Scanner: TControllerScanner;
-  Routes: TObjectList<TRouteDescriptor>;
   Server: THttpServer;
 begin
   Container := TAppContainer.Create;
-  Scanner := TControllerScanner.Create;
-  Routes := nil;
   Server := nil;
 
   try
-    Container.AddScoped(TypeInfo(IAuthService), TAuthService);
-    Container.AddTransient(TypeInfo(TAuthController), TAuthController);
-
-    Routes := Scanner.Execute([
-      TAuthController
-    ]);
+    Container.AddScoped<IAuthService, TAuthService>;
+    Container.AddController<TAuthController>;
 
     Server := THttpComposition.CreateDefaultServer(
       8080,
-      Routes,
       Container
     );
 
@@ -533,7 +539,6 @@ begin
     Readln;
   finally
     Server.Free;
-    Scanner.Free;
     Container.Free;
   end;
 end.
@@ -545,10 +550,10 @@ end.
 
 ### Controllers
 
-Registrar como transient:
+Registrar con `AddController`:
 
 ```pas
-Container.AddTransient(TypeInfo(TAuthController), TAuthController);
+Container.AddController<TAuthController>;
 ```
 
 Motivo: evitar compartir estado entre requests.
@@ -558,7 +563,7 @@ Motivo: evitar compartir estado entre requests.
 Pueden ser singleton:
 
 ```pas
-Container.AddSingleton(TypeInfo(ILogger), TConsoleLogger);
+Container.AddSingleton<ILogger, TConsoleLogger>;
 ```
 
 ### Servicios de request o base de datos
@@ -566,8 +571,8 @@ Container.AddSingleton(TypeInfo(ILogger), TConsoleLogger);
 Usar scoped:
 
 ```pas
-Container.AddScoped(TypeInfo(IUserRepository), TUserRepository);
-Container.AddScoped(TypeInfo(IUnitOfWork), TUnitOfWork);
+Container.AddScoped<IUserRepository, TUserRepository>;
+Container.AddScoped<IUnitOfWork, TUnitOfWork>;
 ```
 
 ### Valores primitivos o configuración
@@ -592,20 +597,15 @@ Container.AddFactory(
 Para agregar un endpoint nuevo:
 
 1. Crear DTOs de entrada/salida implementando `IDto`.
-2. Crear el controller implementando `IController`.
+2. Crear el controller como clase normal.
 3. Agregar `[Route]` al controller.
 4. Agregar `[Get]`, `[Post]`, etc. al método.
 5. Registrar dependencias del controller.
-6. Registrar el controller como transient.
-7. Agregar el controller al `Scanner.Execute([...])`.
+6. Registrar el controller con `AddController`.
 
 Ejemplo mínimo:
 
 ```pas
-Container.AddScoped(TypeInfo(IMyService), TMyService);
-Container.AddTransient(TypeInfo(TMyController), TMyController);
-
-Routes := Scanner.Execute([
-  TMyController
-]);
+Container.AddScoped<IMyService, TMyService>;
+Container.AddController<TMyController>;
 ```
