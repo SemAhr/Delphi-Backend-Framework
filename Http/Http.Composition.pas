@@ -5,7 +5,6 @@ interface
 uses
   System.Generics.Collections,
   Container.App,
-  Container.Port,
   Http.RouteDescriptor,
   Http.Router.Port,
   Http.Server;
@@ -13,12 +12,12 @@ uses
 type
   THttpComposition = class sealed
   public
-    class function CreateDefaultRouter(const ARoutes: TObjectList<TRouteDescriptor>; const AContainer: IContainer): IRouter; static;
+    class function CreateDefaultRouter(const ARoutes: TObjectList<TRouteDescriptor>; const AContainer: TAppContainer): IRouter; static;
 
     class function CreateDefaultServer(
       const APort: Integer;
       const ARoutes: TObjectList<TRouteDescriptor>;
-      const AContainer: IContainer
+      const AContainer: TAppContainer
     ): THttpServer; overload; static;
 
     class function CreateDefaultServer(
@@ -42,7 +41,7 @@ uses
   Http.ParameterBinder,
   Http.ParameterBinder.Port;
 
-class function THttpComposition.CreateDefaultRouter(const ARoutes: TObjectList<TRouteDescriptor>; const AContainer: IContainer): IRouter;
+class function THttpComposition.CreateDefaultRouter(const ARoutes: TObjectList<TRouteDescriptor>; const AContainer: TAppContainer): IRouter;
 begin
   var DtoBinder := TDtoBinder.Create;
   var BodyBinder := TBodyBinder.Create(DtoBinder);
@@ -56,7 +55,7 @@ end;
 class function THttpComposition.CreateDefaultServer(
   const APort: Integer;
   const ARoutes: TObjectList<TRouteDescriptor>;
-  const AContainer: IContainer
+  const AContainer: TAppContainer
 ): THttpServer;
 begin
   Result := THttpServer.Create(

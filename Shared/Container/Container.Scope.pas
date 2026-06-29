@@ -4,41 +4,63 @@ interface
 
 uses
   System.TypInfo,
-  System.Generics.Collections,
-  Container.App,
-  Container.Port;
+  System.Generics.Collections;
 
 type
-  TContainerScope = class(TInterfacedObject, IContainer)
+  /// <summary>
+  /// Request/operation container scope used to resolve scoped and transient dependencies safely.
+  /// </summary>
+  /// <remarks>
+  /// A scope references the root TAppContainer for registrations and construction logic, but stores
+  /// scoped instances locally. This prevents request-specific dependencies from being reused by
+  /// other requests.
+  /// </remarks>
+  TContainerScope = class
   private
-    FRoot: TAppContainer;
+    FRoot: TObject;
     FScopedInstances: TDictionary<PTypeInfo, TObject>;
     FTransientInstances: TObjectList<TObject>;
   public
-    constructor Create(const ARoot: TAppContainer);
+    /// <summary>
+    /// Creates a scope linked to the root application container.
+    /// </summary>
+    constructor Create(const ARoot: TObject);
+
+    /// <summary>
+    /// Releases transient instances first, then scoped instances owned by this scope.
+    /// </summary>
+    /// <remarks>
+    /// Transients are released first because transient objects, such as controllers, may hold
+    /// references to scoped dependencies injected through their constructors.
+    /// </remarks>
     destructor Destroy; override;
 
-    procedure AddSingleton(const ATypeInfo: PTypeInfo; const AImplementationType: TClass); overload;
-    procedure AddSingleton(const ATypeInfo: PTypeInfo; const AInstance: TObject); overload;
-    procedure AddTransient(const ATypeInfo: PTypeInfo; const AImplementationType: TClass);
-    procedure AddScoped(const ATypeInfo: PTypeInfo; const AImplementationType: TClass);
-    procedure AddFactory(
-      const ATypeInfo: PTypeInfo;
-      const AFactory: TServiceFactory;
-      const ALifetime: TServiceLifetime
-    );
 
+
+    /// <summary>
+    /// Resolves a dependency using the root registration table and this scope's instance cache.
+    /// </summary>
+    /// <remarks>
+    /// Singleton dependencies are delegated to the root container. Transient dependencies are created
+    /// every time and tracked for disposal. Scoped dependencies are created once and reused until the
+    /// scope is destroyed.
+    /// </remarks>
     function Resolve(const ATypeInfo: PTypeInfo): TObject;
-    function CreateScope: IContainer;
+
+    /// <summary>
+    /// Creates another scope linked to the same root container.
+    /// </summary>
+    function CreateScope: TContainerScope;
   end;
 
 implementation
 
 uses
   AppExceptions,
-  Container.ServiceDescriptor;
+  Container.App,
+  Container.DependencyDescriptor;
 
-constructor TContainerScope.Create(const ARoot: TAppContainer);
+constructor TContainerScope.Create(const ARoot: TObject);
 begin
   inherited Create;
 
@@ -62,57 +84,30 @@ begin
   inherited;
 end;
 
-procedure TContainerScope.AddSingleton(const ATypeInfo: PTypeInfo; const AImplementationType: TClass);
-begin
-  FRoot.AddSingleton(ATypeInfo, AImplementationType);
-end;
 
-procedure TContainerScope.AddSingleton(const ATypeInfo: PTypeInfo; const AInstance: TObject);
-begin
-  FRoot.AddSingleton(ATypeInfo, AInstance);
-end;
-
-procedure TContainerScope.AddTransient(const ATypeInfo: PTypeInfo; const AImplementationType: TClass);
-begin
-  FRoot.AddTransient(ATypeInfo, AImplementationType);
-end;
-
-procedure TContainerScope.AddScoped(const ATypeInfo: PTypeInfo; const AImplementationType: TClass);
-begin
-  FRoot.AddScoped(ATypeInfo, AImplementationType);
-end;
-
-procedure TContainerScope.AddFactory(
-  const ATypeInfo: PTypeInfo;
-  const AFactory: TServiceFactory;
-  const ALifetime: TServiceLifetime
-);
-begin
-  FRoot.AddFactory(ATypeInfo, AFactory, ALifetime);
-end;
 
 function TContainerScope.Resolve(const ATypeInfo: PTypeInfo): TObject;
 var
-  Descriptor: TServiceDescriptor;
+  Descriptor: TDependencyDescriptor;
 begin
-  Descriptor := FRoot.GetDescriptor(ATypeInfo);
+  Descriptor := TAppContainer(FRoot).GetDescriptor(ATypeInfo);
 
-  case Descriptor.Lifetime of
-    slSingleton:
-      Exit(FRoot.Resolve(ATypeInfo));
+  case Descriptor.GetLifetime of
+    dlSingleton:
+      Exit(TAppContainer(FRoot).Resolve(ATypeInfo));
 
-    slTransient:
+    dlTransient:
       begin
-        Result := FRoot.CreateInstance(Descriptor, Self as IContainer);
+        Result := TAppContainer(FRoot).CreateInstance(Descriptor, Self);
         FTransientInstances.Add(Result);
         Exit;
       end;
 
-    slScoped:
+    dlScoped:
       begin
         if not FScopedInstances.TryGetValue(ATypeInfo, Result) then
         begin
-          Result := FRoot.CreateInstance(Descriptor, Self as IContainer);
+          Result := TAppContainer(FRoot).CreateInstance(Descriptor, Self);
           FScopedInstances.Add(ATypeInfo, Result);
         end;
 
@@ -121,12 +116,12 @@ begin
   end;
 
   raise EMissingDependencyException.CreateFmt(
-    'Unsupported lifetime for service "%s".',
+    'Unsupported lifetime for dependency "%s".',
     [ATypeInfo.Name]
   );
 end;
 
-function TContainerScope.CreateScope: IContainer;
+function TContainerScope.CreateScope: TContainerScope;
 begin
   Result := TContainerScope.Create(FRoot);
 end;

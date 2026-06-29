@@ -6,8 +6,7 @@ program BackendFramework;
 
 uses
   System.SysUtils,
-  Container.Port in 'Shared\Container\Container.Port.pas',
-  Container.ServiceDescriptor in 'Shared\Container\Container.ServiceDescriptor.pas',
+  Container.DependencyDescriptor in 'Shared\Container\Container.DependencyDescriptor.pas',
   Container.App in 'Shared\Container\Container.App.pas',
   Container.Scope in 'Shared\Container\Container.Scope.pas',
   AppExceptions in 'Shared\Exceptions\AppExceptions.pas',
@@ -24,6 +23,11 @@ uses
   Dto.Validation.RequiredValidator in 'Dto\Validation\Validators\Dto.Validation.RequiredValidator.pas',
   Dto.Validation.StringValidator in 'Dto\Validation\Validators\Dto.Validation.StringValidator.pas',
   Http.Controller.Port in 'Http\Controllers\Http.Controller.Port.pas',
+  Http.Middleware.Port in 'Http\Middleware\Http.Middleware.Port.pas',
+  Http.Middleware.Descriptor in 'Http\Middleware\Http.Middleware.Descriptor.pas',
+  Http.Middleware.Attributes in 'Http\Middleware\Http.Middleware.Attributes.pas',
+  Http.Middleware.Pipeline in 'Http\Middleware\Http.Middleware.Pipeline.pas',
+  Http.EndpointAttributeHandler.Port in 'Http\EndpointAttributes\Http.EndpointAttributeHandler.Port.pas',
   Http.Attributes in 'Http\Attributes\Http.Attributes.pas',
   Http.Core in 'Http\Http.Core.pas',
   Http.Context in 'Http\Context\Http.Context.pas',

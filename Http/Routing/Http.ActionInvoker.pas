@@ -5,7 +5,7 @@ interface
 uses
   System.SysUtils,
   System.Rtti,
-  Container.Port,
+  Container.App,
   Http.Context,
   Http.RouteDescriptor,
   Http.ParameterBinder.Port,
@@ -14,10 +14,10 @@ uses
 type
   TActionInvoker = class(TInterfacedObject, IActionInvoker)
   private
-    FContainer: IContainer;
+    FContainer: TAppContainer;
     FParameterBinder: IParameterBinder;
   public
-    constructor Create(const AContainer: IContainer; const AParameterBinder: IParameterBinder);
+    constructor Create(const AContainer: TAppContainer; const AParameterBinder: IParameterBinder);
 
     function Execute(const ARoute: TRouteDescriptor; const AContext: TContext): TValue;
   end;
@@ -27,7 +27,7 @@ implementation
 uses
   AppExceptions;
 
-constructor TActionInvoker.Create(const AContainer: IContainer; const AParameterBinder: IParameterBinder);
+constructor TActionInvoker.Create(const AContainer: TAppContainer; const AParameterBinder: IParameterBinder);
 begin
   inherited Create;
 
@@ -45,25 +45,29 @@ function TActionInvoker.Execute(const ARoute: TRouteDescriptor; const AContext: 
 var
   Arguments: TArray<TValue>;
 begin
-  var Resolver := AContext.Services;
+  var Resolver: TObject := AContext.Dependencies;
 
   if Resolver = nil then
     Resolver := FContainer;
 
-  var Controller := Resolver.Resolve(ARoute.ControllerType.Handle);
+  var Controller := FContainer.CreateComponentInstance(ARoute.ControllerType.MetaclassType, Resolver);
 
   if Controller = nil then
     raise EMissingDependencyException.CreateFmt(
-      'Controller "%s" could not be resolved.',
+      'Controller "%s" could not be created.',
       [ARoute.ControllerType.Name]
     );
 
-  SetLength(Arguments, Length(ARoute.Parameters));
+  try
+    SetLength(Arguments, Length(ARoute.Parameters));
 
-  for var Index := 0 to High(ARoute.Parameters) do
-    Arguments[Index] := FParameterBinder.Execute(AContext, ARoute.Parameters[Index]);
+    for var Index := 0 to High(ARoute.Parameters) do
+      Arguments[Index] := FParameterBinder.Execute(AContext, ARoute.Parameters[Index]);
 
-  Result := ARoute.MethodInfo.Invoke(Controller, Arguments);
+    Result := ARoute.MethodInfo.Invoke(Controller, Arguments);
+  finally
+    Controller.Free;
+  end;
 end;
 
 end.

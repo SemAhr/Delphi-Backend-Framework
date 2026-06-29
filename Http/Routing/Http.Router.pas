@@ -6,18 +6,21 @@ uses
   System.SysUtils,
   System.Rtti,
   System.Generics.Collections,
-  Container.Port,
+  Container.App,
   Http.Core,
   Http.RouteDescriptor,
   Http.Router.Port,
-  Http.ActionInvoker.Port;
+  Http.ActionInvoker.Port,
+  Http.Middleware.Descriptor,
+  Http.Middleware.Pipeline;
 
 type
   TRouter = class(TInterfacedObject, IRouter)
   private
     FRoutes: TObjectList<TRouteDescriptor>;
     FActionInvoker: IActionInvoker;
-    FContainer: IContainer;
+    FContainer: TAppContainer;
+    FMiddlewarePipeline: TMiddlewarePipeline;
 
     function SplitPath(const AValue: string): TArray<string>;
 
@@ -27,12 +30,19 @@ type
       const AParams: TDictionary<string, string>
     ): Boolean;
 
+    function CombineMiddlewares(
+      const AGlobalMiddlewares: TArray<TMiddlewareDescriptor>;
+      const ARouteMiddlewares: TArray<TMiddlewareDescriptor>
+    ): TArray<TMiddlewareDescriptor>;
+
+    function InvokeEndpoint(const ARoute: TRouteDescriptor; const AContext: TContext): TResponse;
+
     function InvokeRoute(const ARoute: TRouteDescriptor; const ARequest: TRequest): TResponse;
   public
     constructor Create(
       const ARoutes: TObjectList<TRouteDescriptor>;
       const AActionInvoker: IActionInvoker;
-      const AContainer: IContainer
+      const AContainer: TAppContainer
     );
     destructor Destroy; override;
 
@@ -51,7 +61,7 @@ uses
 constructor TRouter.Create(
   const ARoutes: TObjectList<TRouteDescriptor>;
   const AActionInvoker: IActionInvoker;
-  const AContainer: IContainer
+  const AContainer: TAppContainer
 );
 begin
   inherited Create;
@@ -68,10 +78,12 @@ begin
   FRoutes := ARoutes;
   FActionInvoker := AActionInvoker;
   FContainer := AContainer;
+  FMiddlewarePipeline := TMiddlewarePipeline.Create(AContainer);
 end;
 
 destructor TRouter.Destroy;
 begin
+  FMiddlewarePipeline.Free;
   FRoutes.Free;
   inherited;
 end;
@@ -136,7 +148,21 @@ begin
   Result := True;
 end;
 
-function TRouter.InvokeRoute(const ARoute: TRouteDescriptor; const ARequest: TRequest): TResponse;
+function TRouter.CombineMiddlewares(
+  const AGlobalMiddlewares: TArray<TMiddlewareDescriptor>;
+  const ARouteMiddlewares: TArray<TMiddlewareDescriptor>
+): TArray<TMiddlewareDescriptor>;
+begin
+  SetLength(Result, Length(AGlobalMiddlewares) + Length(ARouteMiddlewares));
+
+  for var Index := 0 to High(AGlobalMiddlewares) do
+    Result[Index] := AGlobalMiddlewares[Index];
+
+  for var Index := 0 to High(ARouteMiddlewares) do
+    Result[Length(AGlobalMiddlewares) + Index] := ARouteMiddlewares[Index];
+end;
+
+function TRouter.InvokeEndpoint(const ARoute: TRouteDescriptor; const AContext: TContext): TResponse;
 var
   ReturnValue: TValue;
   ReturnedObject: TObject;
@@ -154,13 +180,7 @@ begin
     end;
   end;
 
-  var Scope := FContainer.CreateScope;
-  var Context := TContext.Create(ARequest, Scope);
-  try
-    ReturnValue := FActionInvoker.Execute(ARoute, Context);
-  finally
-    Context.Free;
-  end;
+  ReturnValue := FActionInvoker.Execute(ARoute, AContext);
 
   if ReturnValue.IsEmpty then
   begin
@@ -210,6 +230,26 @@ begin
     Response.StatusCode := StatusCode;
 
   Result := Response;
+end;
+
+function TRouter.InvokeRoute(const ARoute: TRouteDescriptor; const ARequest: TRequest): TResponse;
+begin
+  var Scope := FContainer.CreateScope;
+  var Context := TContext.Create(ARequest, Scope);
+  try
+    Result := FMiddlewarePipeline.Execute(
+      Context,
+      CombineMiddlewares(FContainer.GetGlobalMiddlewares, ARoute.Middlewares),
+      ARoute.Attributes,
+      FContainer.GetAttributeHandlerTypes,
+      function: TResponse
+      begin
+        Result := InvokeEndpoint(ARoute, Context);
+      end
+    );
+  finally
+    Context.Free;
+  end;
 end;
 
 function TRouter.Dispatch(const ARequest: TRequest): TResponse;

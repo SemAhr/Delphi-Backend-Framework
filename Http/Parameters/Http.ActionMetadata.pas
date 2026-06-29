@@ -10,21 +10,53 @@ uses
   Http.ParameterDescriptor;
 
 type
+  /// <summary>
+  /// Aggregates the metadata needed to invoke a controller action.
+  /// </summary>
+  /// <remarks>
+  /// This object is an intermediate result produced while scanning a controller method. The route
+  /// scanner copies its parameter descriptors into TRouteDescriptor so the router can bind arguments
+  /// efficiently at request time.
+  /// </remarks>
   TActionMetadata = class
   private
     FMethod: TRttiMethod;
     FParameters: TArray<TParameterDescriptor>;
   public
+    /// <summary>
+    /// Creates action metadata for a controller method.
+    /// </summary>
+    /// <param name="AMethod">RTTI method metadata for the controller action.</param>
+    /// <param name="AParameters">Binding metadata generated for every action parameter.</param>
     constructor Create(const AMethod: TRttiMethod; const AParameters: TArray<TParameterDescriptor>);
-    
+
+    /// <summary>
+    /// RTTI method metadata of the controller action.
+    /// </summary>
     property MethodInfo: TRttiMethod read FMethod;
+
+    /// <summary>
+    /// Parameter binding descriptors associated with MethodInfo.
+    /// </summary>
     property Parameters: TArray<TParameterDescriptor> read FParameters;
   end;
 
+  /// <summary>
+  /// Builds action metadata from RTTI by reading binding attributes on method parameters.
+  /// </summary>
   TActionMetadataFactory = class
   private
+    /// <summary>
+    /// Reads the binding attribute assigned to a parameter and returns the source to bind from.
+    /// </summary>
+    /// <param name="AParameter">RTTI parameter metadata to inspect.</param>
+    /// <param name="ASourceName">Optional external name declared by the binding attribute.</param>
     function GetParameterSource(const AParameter: TRttiParameter; out ASourceName: string): TParameterSource;
   public
+    /// <summary>
+    /// Creates metadata for a controller action and validates that every parameter has a binding attribute.
+    /// </summary>
+    /// <param name="AMethodInfo">RTTI method metadata for the controller action.</param>
     function CreateMetadata(const AMethodInfo: TRttiMethod): TActionMetadata;
   end;
 

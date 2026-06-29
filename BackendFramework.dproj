@@ -98,8 +98,7 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="Shared\Container\Container.Port.pas"/>
-        <DCCReference Include="Shared\Container\Container.ServiceDescriptor.pas"/>
+        <DCCReference Include="Shared\Container\Container.DependencyDescriptor.pas"/>
         <DCCReference Include="Shared\Container\Container.App.pas"/>
         <DCCReference Include="Shared\Container\Container.Scope.pas"/>
         <DCCReference Include="Shared\Exceptions\AppExceptions.pas"/>
@@ -116,6 +115,11 @@
         <DCCReference Include="Dto\Validation\Validators\Dto.Validation.RequiredValidator.pas"/>
         <DCCReference Include="Dto\Validation\Validators\Dto.Validation.StringValidator.pas"/>
         <DCCReference Include="Http\Controllers\Http.Controller.Port.pas"/>
+        <DCCReference Include="Http\Middleware\Http.Middleware.Port.pas"/>
+        <DCCReference Include="Http\Middleware\Http.Middleware.Descriptor.pas"/>
+        <DCCReference Include="Http\Middleware\Http.Middleware.Attributes.pas"/>
+        <DCCReference Include="Http\Middleware\Http.Middleware.Pipeline.pas"/>
+        <DCCReference Include="Http\EndpointAttributes\Http.EndpointAttributeHandler.Port.pas"/>
         <DCCReference Include="Http\Attributes\Http.Attributes.pas"/>
         <DCCReference Include="Http\Http.Core.pas"/>
         <DCCReference Include="Http\Context\Http.Context.pas"/>

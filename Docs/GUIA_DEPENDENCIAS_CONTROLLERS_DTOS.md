@@ -30,18 +30,18 @@ Container.Port
 El contenedor soporta tres lifetimes:
 
 ```pas
-TServiceLifetime = (
-  slSingleton,
-  slTransient,
-  slScoped
+TDependencyLifetime = (
+  dlSingleton,
+  dlTransient,
+  dlScoped
 );
 ```
 
 | Lifetime | Comportamiento | Uso recomendado |
 |---|---|---|
-| `slSingleton` | Una instancia para toda la app. Se crea lazy en el primer `Resolve`. | Logger, configuración, servicios stateless globales. |
-| `slTransient` | Nueva instancia cada vez que se resuelve. | Controllers, DTO helpers, servicios livianos. |
-| `slScoped` | Una instancia por request/scope. | Repositories, UnitOfWork, servicios con estado de request. |
+| `dlSingleton` | Una instancia para toda la app. Se crea lazy en el primer `Resolve`. | Logger, configuración, dependencias stateless globales. |
+| `dlTransient` | Nueva instancia cada vez que se resuelve. | Controllers, DTO helpers, dependencias livianas. |
+| `dlScoped` | Una instancia por request/scope. | Repositories, UnitOfWork, dependencias con estado de request. |
 
 ---
 
@@ -67,7 +67,7 @@ implementation
 end.
 ```
 
-### 3.2. Implementar el servicio
+### 3.2. Implementar la dependencia
 
 ```pas
 unit Auth.Service;
@@ -180,7 +180,7 @@ Container.AddFactory(
   begin
     Result := TAuthService.Create;
   end,
-  slScoped
+  dlScoped
 );
 ```
 
@@ -193,7 +193,7 @@ Container.AddFactory(
   begin
     Result := TConsoleLogger.Create('debug');
   end,
-  slSingleton
+  dlSingleton
 );
 ```
 
@@ -364,13 +364,23 @@ function Search(
 
 ## 7. Registrar controllers
 
-Los controllers deben registrarse con `AddController`:
+Los controllers pueden registrarse individualmente con `AddController`:
 
 ```pas
 Container.AddController<TAuthController>;
 ```
 
-`AddController` hace dos cosas:
+O en lista con `AddControllers`:
+
+```pas
+Container.AddControllers([
+  TAuthController,
+  TUsersController,
+  TOrdersController
+]);
+```
+
+`AddController` y `AddControllers` hacen dos cosas por cada controller:
 
 1. Valida que la clase implemente `IController`.
 2. La registra como `transient` para que se cree una instancia nueva por request.
@@ -527,7 +537,9 @@ begin
 
   try
     Container.AddScoped<IAuthService, TAuthService>;
-    Container.AddController<TAuthController>;
+    Container.AddControllers([
+      TAuthController
+    ]);
 
     Server := THttpComposition.CreateDefaultServer(
       8080,
@@ -558,7 +570,7 @@ Container.AddController<TAuthController>;
 
 Motivo: evitar compartir estado entre requests.
 
-### Servicios stateless
+### Dependencias stateless
 
 Pueden ser singleton:
 
@@ -566,7 +578,7 @@ Pueden ser singleton:
 Container.AddSingleton<ILogger, TConsoleLogger>;
 ```
 
-### Servicios de request o base de datos
+### Dependencias de request o base de datos
 
 Usar scoped:
 
@@ -586,7 +598,7 @@ Container.AddFactory(
   begin
     Result := TJwtService.Create('secret-key');
   end,
-  slSingleton
+  dlSingleton
 );
 ```
 

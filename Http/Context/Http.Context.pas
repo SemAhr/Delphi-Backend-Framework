@@ -3,28 +3,28 @@ unit Http.Context;
 interface
 
 uses
-  Container.Port,
+  Container.Scope,
   Http.Core;
 
 type
   TContext = class
   private
     FRequest: TRequest;
-    FServices: IContainer;
+    FDependencies: TContainerScope;
   public
-    constructor Create(const ARequest: TRequest; const AServices: IContainer);
+    constructor Create(const ARequest: TRequest; const ADependencies: TContainerScope);
 
     property Request: TRequest read FRequest;
-    property Services: IContainer read FServices;
+    property Dependencies: TContainerScope read FDependencies;
   end;
 
 implementation
 
-constructor TContext.Create(const ARequest: TRequest; const AServices: IContainer);
+constructor TContext.Create(const ARequest: TRequest; const ADependencies: TContainerScope);
 begin
   inherited Create;
   FRequest := ARequest;
-  FServices := AServices;
+  FDependencies := ADependencies;
 end;
 
 end.

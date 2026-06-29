@@ -11,11 +11,16 @@ type
 implementation
 
 uses
-  Container.Port;
+  Container.App;
 
 class procedure TBootstrap.Create;
 begin
-  var AppContainer: IContainer;
+  var AppContainer := TAppContainer.Create;
+  try
+    // Register dependencies and HTTP framework components here.
+  finally
+    AppContainer.Free;
+  end;
 end;
 
 end.
