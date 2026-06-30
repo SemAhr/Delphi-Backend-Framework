@@ -5,6 +5,9 @@ interface
 type
   TBootstrap = class sealed
   public
+    /// <summary>
+    /// Initializes the application by registering dependencies and configuring the HTTP framework.
+    /// </summary>
     class procedure Create;
   end;
 

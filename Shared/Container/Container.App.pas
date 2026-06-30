@@ -324,8 +324,7 @@ begin
       'Options field "%s" has type "%s" but "%s" was expected.',
       [
         AName,
-        FieldValue.TypeInfo.Name,
-        TypeInfo(TOptions).Name
+        FieldValue.TypeInfo.Name
       ]
     );
 

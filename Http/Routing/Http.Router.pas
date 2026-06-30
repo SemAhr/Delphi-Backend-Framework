@@ -8,6 +8,7 @@ uses
   System.Generics.Collections,
   Container.App,
   Http.Core,
+  Http.Context,
   Http.RouteDescriptor,
   Http.Router.Port,
   Http.ActionInvoker.Port,
@@ -54,7 +55,6 @@ implementation
 uses
   AppExceptions,
   Http.Attributes,
-  Http.Context,
   Dto.Port,
   Json.Helpers;
 
