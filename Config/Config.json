@@ -1,0 +1,6 @@
+{
+    "Logger": {
+        "LogLevel": "Debug",
+        "FilePath": "./Logs/App.log"
+    }
+}

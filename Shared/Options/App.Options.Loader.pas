@@ -9,7 +9,7 @@ uses
 type
   TAppOptionsLoader = class sealed
   private
-    const DefaultOptionsFilePath = './config/Config.json';
+    const DefaultOptionsFilePath = './Config/Config.json';
 
     class function LoadJsonObjectFromFile(const AFilePath: string): TJSONObject; static;
     class function CloneJsonValue(const AValue: TJSONValue): TJSONValue; static;

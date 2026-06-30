@@ -43,7 +43,7 @@ type
 El loader por defecto lee:
 
 ```text
-./config/Config.json
+./Config/Config.json
 ```
 
 Ejemplo mínimo:
@@ -60,7 +60,7 @@ Ejemplo mínimo:
 También se puede cargar un archivo custom y mezclarlo con el default:
 
 ```pascal
-TAppOptionsLoader.LoadFromFile('./config/Production.json');
+TAppOptionsLoader.LoadFromFile('./Config/Production.json');
 ```
 
 El merge es recursivo para objetos JSON: si una sección existe en default y en override, solo se reemplazan los campos provistos por el override.
