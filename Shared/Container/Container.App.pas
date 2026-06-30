@@ -8,10 +8,14 @@ uses
   System.Generics.Collections,
   Container.DependencyDescriptor,
   Container.Scope,
+  Options.Port,
   Http.Controller.Port,
   Http.Middleware.Descriptor;
 
 type
+  TOptionsValueLoader = reference to function: TValue;
+  TOptionsRegistration = reference to procedure(const ARootOptions: TValue);
+
   /// <summary>
   /// Root dependency container used to configure the application.
   /// </summary>
@@ -26,6 +30,10 @@ type
     FControllerTypes: TList<TClass>;
     FGlobalMiddlewares: TList<TMiddlewareDescriptor>;
     FAttributeHandlerTypes: TList<TClass>;
+    FOptionsRegistrations: TList<TOptionsRegistration>;
+    FOptionsRootLoader: TOptionsValueLoader;
+    FOptionsRootValue: TValue;
+    FOptionsLoaded: Boolean;
 
     /// <summary>
     /// Converts class RTTI into a TClass value used by generic registration methods.
@@ -48,6 +56,9 @@ type
     function ResolveDependency(const ATypeInfo: PTypeInfo; const AResolver: TObject): TObject;
 
     function ResolveConstructorParameter(const AParameter: TRttiParameter; const AResolver: TObject): TValue;
+
+    function ExtractOptionValue<TOptions: record>(const ARootOptions: TValue; const AName: string): TOptions;
+    procedure EnsureOptionsLoaded;
 
     function ImplementsInterfaceContract(const AType: TClass; const AInterfaceType: PTypeInfo): Boolean;
   public
@@ -132,6 +143,16 @@ type
     procedure AddScoped<TDependency; TImplementation: class>; overload;
 
     /// <summary>
+    /// Defines the root application options loader. The loader is executed only once, lazily.
+    /// </summary>
+    procedure SetOptionsLoader<TRootOptions: record>(const ALoader: TOptionsLoader<TRootOptions>);
+
+    /// <summary>
+    /// Registers a record options section by field name from the root options record.
+    /// </summary>
+    procedure AddOptions<TOptions: record>(const AName: string);
+
+    /// <summary>
     /// Registers a controller class and stores it for automatic route discovery.
     /// </summary>
     /// <remarks>
@@ -193,6 +214,9 @@ implementation
 uses
   System.SysUtils,
   AppExceptions,
+  App.Options,
+  App.Options.Loader,
+  Logger.Options,
   Http.Middleware.Port,
   Http.EndpointAttributeHandler.Port;
 
@@ -203,10 +227,16 @@ begin
   FControllerTypes := TList<TClass>.Create;
   FGlobalMiddlewares := TList<TMiddlewareDescriptor>.Create;
   FAttributeHandlerTypes := TList<TClass>.Create;
+  FOptionsRegistrations := TList<TOptionsRegistration>.Create;
+  FOptionsLoaded := False;
+
+  SetOptionsLoader<TAppOptions>(TAppOptionsLoader.LoadFromDefaultPath);
+  AddOptions<TLoggerOptions>('Logger');
 end;
 
 destructor TAppContainer.Destroy;
 begin
+  FOptionsRegistrations.Free;
   FAttributeHandlerTypes.Free;
   FGlobalMiddlewares.Free;
   FControllerTypes.Free;
@@ -263,6 +293,61 @@ begin
   end;
 end;
 
+function TAppContainer.ExtractOptionValue<TOptions>(const ARootOptions: TValue; const AName: string): TOptions;
+var
+  RttiContext: TRttiContext;
+  RttiType: TRttiType;
+  Field: TRttiField;
+  FieldValue: TValue;
+begin
+  if ARootOptions.IsEmpty then
+    raise EMissingDependencyException.Create('Root options are not loaded.');
+
+  RttiContext := TRttiContext.Create;
+  RttiType := RttiContext.GetType(ARootOptions.TypeInfo);
+
+  if (RttiType = nil) or (RttiType.TypeKind <> tkRecord) then
+    raise EMissingDependencyException.Create('Root options must be a record.');
+
+  Field := RttiType.GetField(AName);
+
+  if Field = nil then
+    raise EMissingDependencyException.CreateFmt(
+      'Options field "%s" was not found in root options record.',
+      [AName]
+    );
+
+  FieldValue := Field.GetValue(ARootOptions.GetReferenceToRawData);
+
+  if FieldValue.TypeInfo <> TypeInfo(TOptions) then
+    raise EMissingDependencyException.CreateFmt(
+      'Options field "%s" has type "%s" but "%s" was expected.',
+      [
+        AName,
+        FieldValue.TypeInfo.Name,
+        TypeInfo(TOptions).Name
+      ]
+    );
+
+  Result := FieldValue.AsType<TOptions>;
+end;
+
+procedure TAppContainer.EnsureOptionsLoaded;
+begin
+  if FOptionsLoaded then
+    Exit;
+
+  if not Assigned(FOptionsRootLoader) then
+    Exit;
+
+  FOptionsRootValue := FOptionsRootLoader();
+
+  for var Registration in FOptionsRegistrations do
+    Registration(FOptionsRootValue);
+
+  FOptionsLoaded := True;
+end;
+
 procedure TAppContainer.AddDescriptor(const ADescriptor: TDependencyDescriptor);
 begin
   if ADescriptor.DependencyType = nil then
@@ -273,6 +358,8 @@ end;
 
 function TAppContainer.GetDescriptor(const ATypeInfo: PTypeInfo): TDependencyDescriptor;
 begin
+  EnsureOptionsLoaded;
+
   if ATypeInfo = nil then
     raise EMissingDependencyException.Create('Dependency type is required.');
 
@@ -477,6 +564,44 @@ begin
   AddSingleton(TypeInfo(TDependency), GetClassType(TypeInfo(TImplementation)));
 end;
 
+procedure TAppContainer.SetOptionsLoader<TRootOptions>(const ALoader: TOptionsLoader<TRootOptions>);
+begin
+  if not Assigned(ALoader) then
+    raise EMissingDependencyException.Create('Options loader is required.');
+
+  FOptionsRootLoader :=
+    function: TValue
+    var
+      RootOptions: TRootOptions;
+    begin
+      RootOptions := ALoader();
+      AddSingleton(TypeInfo(IOptions<TRootOptions>), TOptions<TRootOptions>.Create(RootOptions));
+      Result := TValue.From<TRootOptions>(RootOptions);
+    end;
+
+  FOptionsLoaded := False;
+end;
+
+procedure TAppContainer.AddOptions<TOptions>(const AName: string);
+begin
+  if AName.Trim.IsEmpty then
+    raise EMissingDependencyException.Create('Options name is required.');
+
+  var Registration: TOptionsRegistration :=
+    procedure(const ARootOptions: TValue)
+    begin
+      AddSingleton(
+        TypeInfo(IOptions<TOptions>),
+        TOptions<TOptions>.Create(ExtractOptionValue<TOptions>(ARootOptions, AName))
+      );
+    end;
+
+  FOptionsRegistrations.Add(Registration);
+
+  if FOptionsLoaded then
+    Registration(FOptionsRootValue);
+end;
+
 procedure TAppContainer.AddController(const AControllerType: TClass);
 begin
   if AControllerType = nil then
@@ -564,6 +689,8 @@ function TAppContainer.Resolve(const ATypeInfo: PTypeInfo): TObject;
 var
   Descriptor: TDependencyDescriptor;
 begin
+  EnsureOptionsLoaded;
+
   Descriptor := GetDescriptor(ATypeInfo);
 
   case Descriptor.GetLifetime of

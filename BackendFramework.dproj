@@ -150,6 +150,10 @@
         <DCCReference Include="Shared\Helpers\StringArray.Helpers.pas"/>
         <DCCReference Include="Shared\Options\Options.Port.pas"/>
         <DCCReference Include="Shared\Logging\Logger.Port.pas"/>
+        <DCCReference Include="Shared\Logging\Logger.Options.pas"/>
+        <DCCReference Include="Shared\Logging\Logger.pas"/>
+        <DCCReference Include="Shared\Options\App.Options.pas"/>
+        <DCCReference Include="Shared\Options\App.Options.Loader.pas"/>
         <DCCReference Include="Src\Presentation\Controllers\Auth.Controller.pas"/>
         <DCCReference Include="Src\Domain\Jwt.Entity.pas"/>
         <DCCReference Include="Src\Domain\Role.pas"/>

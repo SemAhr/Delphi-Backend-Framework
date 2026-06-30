@@ -3,6 +3,8 @@ unit Options.Port;
 interface
 
 type
+  TOptionsLoader<T> = reference to function: T;
+
   IOptions<T> = interface
     ['{9761434b-af2e-44ff-9996-a778beae920a}']
     function GetValue: T;

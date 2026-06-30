@@ -2,10 +2,9 @@ unit Logger.Port;
 
 interface
 
-uses
-  Logger.Options;
-
 type
+  TLogLevel = (llDebug, llInfo, llWarning, llError);
+
   ILogger = interface
     ['{22F4D393-B40A-4574-A428-75579F4C4386}']
 

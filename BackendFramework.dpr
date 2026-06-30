@@ -58,6 +58,10 @@ uses
   StringArray.Helpers in 'Shared\Helpers\StringArray.Helpers.pas',
   Options.Port in 'Shared\Options\Options.Port.pas',
   Logger.Port in 'Shared\Logging\Logger.Port.pas',
+  Logger.Options in 'Shared\Logging\Logger.Options.pas',
+  Logger in 'Shared\Logging\Logger.pas',
+  App.Options in 'Shared\Options\App.Options.pas',
+  App.Options.Loader in 'Shared\Options\App.Options.Loader.pas',
   Auth.Controller in 'Src\Presentation\Controllers\Auth.Controller.pas',
   Jwt.Entity in 'Src\Domain\Jwt.Entity.pas',
   Role in 'Src\Domain\Role.pas',
@@ -68,9 +72,9 @@ uses
 
 begin
   try
-    { TODO -oUser -cConsole Main : Insert code here }
+    TBootstrap.Create;
   except
-    on E: Exception do
-      Writeln(E.ClassName, ': ', E.Message);
+    on Error: Exception do
+      Writeln(Error.ClassName, ': ', Error.Message);
   end;
 end.
