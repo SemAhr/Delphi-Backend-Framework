@@ -1,6 +1,0 @@
-{
-  "Logger": {
-    "LogLevel": "Info",
-    "FilePath": "./logs/app.log"
-  }
-}
