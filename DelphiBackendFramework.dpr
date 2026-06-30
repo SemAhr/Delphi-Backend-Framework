@@ -1,4 +1,4 @@
-program BackendFramework;
+program DelphiBackendFramework;
 
 {$APPTYPE CONSOLE}
 

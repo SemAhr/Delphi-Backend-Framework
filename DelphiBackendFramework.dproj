@@ -6,10 +6,10 @@
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Debug</Config>
         <Platform Condition="'$(Platform)'==''">Win32</Platform>
-        <ProjectName Condition="'$(ProjectName)'==''">BackendFramework</ProjectName>
+        <ProjectName Condition="'$(ProjectName)'==''">DelphiBackendFramework</ProjectName>
         <TargetedPlatforms>1</TargetedPlatforms>
         <AppType>Console</AppType>
-        <MainSource>BackendFramework.dpr</MainSource>
+        <MainSource>DelphiBackendFramework.dpr</MainSource>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
         <Base>true</Base>
@@ -54,7 +54,7 @@
         <DCC_F>false</DCC_F>
         <DCC_K>false</DCC_K>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
-        <SanitizedProjectName>BackendFramework</SanitizedProjectName>
+        <SanitizedProjectName>DelphiBackendFramework</SanitizedProjectName>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Linux64)'!=''">
         <DCC_UsePackage>DataSnapServer;fmx;emshosting;DbxCommonDriver;bindengine;FireDACCommonODBC;emsclient;FireDACCommonDriver;IndyProtocols;dbxcds;emsedge;inetdb;FireDACSqliteDriver;DbxClientDriver;FireDACASADriver;soapmidas;dbexpress;FireDACInfxDriver;inet;DataSnapCommon;dbrtl;FireDACOracleDriver;CustomIPTransport;FireDACMSSQLDriver;DataSnapIndy10ServerTransport;DataSnapConnectors;FireDACMongoDBDriver;IndySystem;FireDACTDataDriver;bindcomp;FireDACCommon;DataSnapServerMidas;FireDACODBCDriver;emsserverresource;inetstn;IndyCore;RESTBackendComponents;rtl;FireDACMySQLDriver;FireDACADSDriver;RESTComponents;dsnapxml;DataSnapClient;DataSnapFireDAC;emsclientfiredac;FireDACPgDriver;FireDAC;xmlrtl;dsnap;CloudService;FireDACDb2Driver;DataSnapNativeClient;DatasnapConnectorsFreePascal;soaprtl;soapserver;FireDACIBDriver;$(DCC_UsePackage)</DCC_UsePackage>
@@ -179,7 +179,7 @@
         <BorlandProject>
             <Delphi.Personality>
                 <Source>
-                    <Source Name="MainSource">BackendFramework.dpr</Source>
+                    <Source Name="MainSource">DelphiBackendFramework.dpr</Source>
                 </Source>
             </Delphi.Personality>
             <Deployment Version="5">
@@ -198,9 +198,9 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="Win32\Debug\BackendFramework.exe" Configuration="Debug" Class="ProjectOutput">
+                <DeployFile LocalName="Win32\Debug\DelphiBackendFramework.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win32">
-                        <RemoteName>BackendFramework.exe</RemoteName>
+                        <RemoteName>DelphiBackendFramework.exe</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
