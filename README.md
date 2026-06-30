@@ -4,18 +4,18 @@ BackendFramework is a Delphi HTTP backend framework built around explicit depend
 
 ## Documentation sections
 
-1. [Architecture overview](./01-architecture-overview.md)
-2. [Dependency container](./02-dependency-container.md)
-3. [Options and configuration](./03-options-and-configuration.md)
-4. [Logging](./04-logging.md)
-5. [Controllers and routing](./05-controllers-and-routing.md)
-6. [DTOs and validation](./06-dtos-and-validation.md)
-7. [Parameter binding](./07-parameter-binding.md)
-8. [Middlewares](./08-middlewares.md)
-9. [Custom attributes](./09-custom-attributes.md)
-10. [HTTP responses](./10-http-responses.md)
-11. [JSON configuration](./11-json-configuration.md)
-12. [Project conventions](./12-project-conventions.md)
+1. [Architecture overview](./Docs/01-architecture-overview.md)
+2. [Dependency container](./Docs/02-dependency-container.md)
+3. [Options and configuration](./Docs/03-options-and-configuration.md)
+4. [Logging](./Docs/04-logging.md)
+5. [Controllers and routing](./Docs/05-controllers-and-routing.md)
+6. [DTOs and validation](./Docs/06-dtos-and-validation.md)
+7. [Parameter binding](./Docs/07-parameter-binding.md)
+8. [Middlewares](./Docs/08-middlewares.md)
+9. [Custom attributes](./Docs/09-custom-attributes.md)
+10. [HTTP responses](./Docs/10-http-responses.md)
+11. [JSON configuration](./Docs/11-json-configuration.md)
+12. [Project conventions](./Docs/12-project-conventions.md)
 
 ## High-level request flow
 
