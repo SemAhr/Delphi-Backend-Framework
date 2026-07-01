@@ -3,7 +3,7 @@ unit Http.ParameterDescriptor;
 interface
 
 uses
-  System.Rtti,
+  System.TypInfo,
   Http.Parameter.Binding;
 
 type
@@ -37,14 +37,9 @@ type
     SourceName: string;
 
     /// <summary>
-    /// RTTI parameter metadata kept for diagnostics and future reflection-based features.
+    /// Runtime type information of the parameter. The binder resolves fresh RTTI metadata from this handle.
     /// </summary>
-    RttiParameter: TRttiParameter;
-
-    /// <summary>
-    /// Runtime type of the parameter. The binder uses it to convert raw request values into TValue.
-    /// </summary>
-    ParameterType: TRttiType;
+    ParameterType: PTypeInfo;
   end;
 
 implementation

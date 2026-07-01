@@ -136,8 +136,8 @@ var
 begin
   JsonObject := TJSONObject.Create;
   try
-    JsonObject.AddPair('error', AErrorName);
     JsonObject.AddPair('statusCode', TJSONNumber.Create(AStatusCode));
+    JsonObject.AddPair('error', AErrorName);
 
     ResponseMessages := AMessages;
 

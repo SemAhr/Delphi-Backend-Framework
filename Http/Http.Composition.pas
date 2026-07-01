@@ -29,6 +29,7 @@ type
 implementation
 
 uses
+  System.SysUtils,
   AppExceptions,
   Dto.Binder,
   Dto.Binder.Port,
@@ -78,6 +79,13 @@ begin
   Scanner := TControllerScanner.Create;
   try
     Routes := Scanner.Execute(AContainer.GetControllerTypes);
+
+    Writeln('HTTP Routes:');
+    for var Route in Routes do
+      Writeln(Format(
+        '%s  %-5s %s %s %s',
+        [#27'[32m', Route.Method, #27'[36m', Route.Path, #27'[0m']
+      ));
   finally
     Scanner.Free;
   end;

@@ -36,6 +36,8 @@ type
       const ARouteMiddlewares: TArray<TMiddlewareDescriptor>
     ): TArray<TMiddlewareDescriptor>;
 
+    function GetRouteStatusCode(const ARoute: TRouteDescriptor): Integer;
+
     function InvokeEndpoint(const ARoute: TRouteDescriptor; const AContext: TContext): TResponse;
 
     function InvokeRoute(const ARoute: TRouteDescriptor; const ARequest: TRequest): TResponse;
@@ -54,6 +56,7 @@ implementation
 
 uses
   AppExceptions,
+  HttpExceptions,
   Http.Attributes,
   Dto.Port,
   Json.Helpers;
@@ -132,7 +135,7 @@ begin
       ParamName := PatternPart.Substring(1);
 
       if ParamName = '' then
-        raise Exception.CreateFmt(
+        raise EInvalidAttributeException.CreateFmt(
           'Invalid route parameter in pattern "%s".',
           [APattern]
         );
@@ -162,46 +165,44 @@ begin
     Result[Length(AGlobalMiddlewares) + Index] := ARouteMiddlewares[Index];
 end;
 
+function TRouter.GetRouteStatusCode(const ARoute: TRouteDescriptor): Integer;
+begin
+  Result := 200;
+
+  var RttiContext := TRttiContext.Create;
+  var RttiType := RttiContext.GetType(ARoute.ControllerType);
+
+  if RttiType = nil then
+    Exit;
+
+  for var MethodInfo in RttiType.GetMethods do
+  begin
+    if not SameText(MethodInfo.Name, ARoute.ActionName) then
+      Continue;
+
+    if Length(MethodInfo.GetParameters) <> Length(ARoute.Parameters) then
+      Continue;
+
+    for var Attribute in MethodInfo.GetAttributes do
+    begin
+      if Attribute is StatusCodeAttribute then
+        Exit(StatusCodeAttribute(Attribute).StatusCode);
+    end;
+
+    Exit;
+  end;
+end;
+
 function TRouter.InvokeEndpoint(const ARoute: TRouteDescriptor; const AContext: TContext): TResponse;
 var
-  ReturnValue: TValue;
   ReturnedObject: TObject;
   Response: TResponse;
   StatusCode: Integer;
+  Dto: IDto;
 begin
-  StatusCode := 0;
+  StatusCode := GetRouteStatusCode(ARoute);
 
-  for var Attribute in ARoute.MethodInfo.GetAttributes do
-  begin
-    if Attribute is StatusCodeAttribute then
-    begin
-      StatusCode := StatusCodeAttribute(Attribute).StatusCode;
-      Break;
-    end;
-  end;
-
-  ReturnValue := FActionInvoker.Execute(ARoute, AContext);
-
-  if ReturnValue.IsEmpty then
-  begin
-    Response := TResponse.NoContent;
-
-    if StatusCode > 0 then
-      Response.StatusCode := StatusCode;
-
-    Exit(Response);
-  end;
-
-  if ReturnValue.Kind <> tkClass then
-    raise EInvalidAttributeException.CreateFmt(
-      'Invalid route return type. Expected %s or IDto, received %s.',
-      [
-        TResponse.ClassName,
-        ReturnValue.TypeInfo.Name
-      ]
-    );
-
-  ReturnedObject := ReturnValue.AsObject;
+  ReturnedObject := FActionInvoker.Execute(ARoute, AContext);
 
   if ReturnedObject = nil then
   begin
@@ -215,7 +216,7 @@ begin
 
   if ReturnedObject is TResponse then
     Response := TResponse(ReturnedObject)
-  else if Supports(ReturnedObject, IDto) then
+  else if Supports(ReturnedObject, IDto, Dto) then
     Response := TResponse.Json(TJsonHelpers.ToString(ReturnedObject))
   else
     raise EInvalidAttributeException.CreateFmt(
@@ -263,7 +264,7 @@ begin
       Exit(InvokeRoute(Route, ARequest));
   end;
 
-  raise ENotFoundAppException.Create('Route not found');
+  raise ENotFoundException.Create('Route not found');
 end;
 
 end.

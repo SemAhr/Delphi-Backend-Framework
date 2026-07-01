@@ -8,8 +8,7 @@ uses
   IdContext,
   IdCustomHTTPServer,
   Http.Core,
-  Http.Router.Port,
-  Error.Dto;
+  Http.Router.Port;
 
 type
   THttpServer = class
@@ -17,7 +16,7 @@ type
     FServer: TIdHTTPServer;
     FRouter: IRouter;
 
-    function HandleError(const Error: string; const Messages: TArray<string>): string;
+    function ParseError(const Error: Exception): TResponse;
 
     procedure HandleCommand(
       AContext: TIdContext;
@@ -43,8 +42,7 @@ uses
   System.StrUtils,
   System.Math,
   HttpExceptions,
-  AppExceptions,
-  Json.Helpers;
+  AppExceptions;
 
 constructor THttpServer.Create(const APort: Integer; const ARouter: IRouter);
 begin
@@ -143,13 +141,101 @@ begin
   AResponseInfo.ContentText := AResponse.Body;
 end;
 
-function THttpServer.HandleError(const Error: string; const Messages: TArray<string>): string;
+function THttpServer.ParseError(const Error: Exception): TResponse;
+var
+  StatusCode: Integer;
+  ErrorName: string;
+  Messages: TArray<string>;
 begin
-  var Response := TErrorDto.Create;
-  Response.Error := Error;
-  Response.Messages := Messages;
+  if Error is EHttpException then
+  begin
+    var HttpError := EHttpException(Error);
 
-  Result := TJsonHelpers.ToString(Response);
+    StatusCode := HttpError.StatusCode;
+    ErrorName := HttpError.ErrorName;
+    Messages := HttpError.Messages;
+  end
+  else if Error is EBadRequestAppException then
+  begin
+    StatusCode := 400;
+    ErrorName := 'Bad Request';
+    Messages := EBadRequestAppException(Error).Messages;
+  end
+  else if Error is EUnauthorizedAppException then
+  begin
+    StatusCode := 401;
+    ErrorName := 'Unauthorized';
+    Messages := [Error.Message];
+  end
+  else if Error is EForbiddenAppException then
+  begin
+    StatusCode := 403;
+    ErrorName := 'Forbidden';
+    Messages := [Error.Message];
+  end
+  else if Error is ENotFoundAppException then
+  begin
+    StatusCode := 404;
+    ErrorName := 'Not Found';
+    Messages := [Error.Message];
+  end
+  else if Error is EConflictAppException then
+  begin
+    StatusCode := 409;
+    ErrorName := 'Conflict';
+    Messages := [Error.Message];
+  end
+  else if Error is EBadGatewayAppException then
+  begin
+    StatusCode := 502;
+    ErrorName := 'Bad Gateway';
+    Messages := [Error.Message];
+  end
+  else if Error is EInfrastructureUnavailableException then
+  begin
+    StatusCode := 503;
+    ErrorName := 'Service Unavailable';
+    Messages := ['A required service is temporarily unavailable.'];
+  end
+  else if
+    (Error is EMissingAttributeException) or
+    (Error is EInvalidAttributeException) or
+    (Error is EUnexpectedAttributeException) or
+    (Error is EOutOfRangeAttributeException)
+  then
+  begin
+    StatusCode := 400;
+    ErrorName := 'Bad Request';
+    Messages := [Error.Message];
+  end
+  else if Error is EDependencyException then
+  begin
+    StatusCode := 500;
+    ErrorName := 'Internal Server Error';
+    Messages := ['Server dependency is not properly configured.'];
+  end
+  else if Error is EMetadataException then
+  begin
+    StatusCode := 500;
+    ErrorName := 'Internal Server Error';
+    Messages := ['Server metadata is not properly configured.'];
+  end
+  else if Error is EServiceException then
+  begin
+    StatusCode := 500;
+    ErrorName := 'Internal Server Error';
+    Messages := ['Unexpected service error.'];
+  end
+  else
+  begin
+    StatusCode := 500;
+    ErrorName := 'Internal Server Error';
+    Messages := ['Unexpected server error.'];
+  end;
+
+  Result := TResponse.Create;
+  Result.StatusCode := StatusCode;
+  Result.Body := BuildHttpExceptionJson(StatusCode, ErrorName, Messages);
 end;
 
 procedure THttpServer.HandleCommand(
@@ -169,17 +255,8 @@ begin
       Request := BuildRequest(ARequestInfo);
       Response := FRouter.Dispatch(Request);
     except
-      on Error: EHttpException do
-      begin
-        Response.StatusCode := Error.StatusCode;
-        Response.Body := HandleError(Error.ErrorName, Error.Messages);
-      end;
-
       on Error: Exception do
-      begin
-        Response.StatusCode := 500;
-        Response.Body := HandleError('Internal Server Error', [Error.Message]);
-      end;
+        Response := ParseError(Error);
     end;
 
     WriteResponse(Response, AResponseInfo);

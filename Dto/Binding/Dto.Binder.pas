@@ -70,6 +70,7 @@ uses
   System.SysUtils,
   System.TypInfo,
   AppExceptions,
+  HttpExceptions,
   Dto.Metadata,
   Dto.Attributes,
   Dto.Validation.Context,
@@ -554,7 +555,7 @@ begin
     raise EMissingDependencyException.Create('DTO class is required.');
 
   if ARawBody.Trim.IsEmpty then
-    raise EInvalidAttributeException.Create('body must be a JSON object');
+    raise EBadRequestException.Create('body must be a JSON object');
 
   RootValue := nil;
   DtoInstance := nil;
@@ -564,7 +565,7 @@ begin
     RootValue := TJSONObject.ParseJSONValue(ARawBody);
 
     if (RootValue = nil) or not (RootValue is TJSONObject) then
-      raise EBadRequestAppException.Create('body must be a JSON object');
+      raise EBadRequestException.Create('body must be a JSON object');
 
     RootObject := TJSONObject(RootValue);
     DtoInstance := ADtoClass.Create;

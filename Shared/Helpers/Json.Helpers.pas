@@ -37,6 +37,7 @@ type
     class function DefaultValue(const RttiType: TRttiType): TValue; static;
     class function DefaultObjectValue(const RttiType: TRttiType): TValue; static;
     class function AreCompatibleArrayElementKinds(const ElementType: TRttiType): Boolean; static;
+    class function IsInterfaceGeneratedProperty(const Prop: TRttiProperty): Boolean; static;
 
     { Core serialization pipeline }
     class function TValueToJson(const Value: TValue): TJSONValue; static;
@@ -63,6 +64,19 @@ uses
 { ----------------------------------------------------------------------------- }
 { Shared low-level utilities                                                    }
 { ----------------------------------------------------------------------------- }
+
+class function TJsonHelpers.IsInterfaceGeneratedProperty(const Prop: TRttiProperty): Boolean;
+begin
+  Result := False;
+
+  if (Prop = nil) or (Prop.Parent = nil) then
+    Exit;
+
+  if Prop.Parent.TypeKind = tkInterface then
+    Exit(True);
+
+  Result := Prop.Parent.Handle = TypeInfo(TInterfacedObject);
+end;
 
 class function TJsonHelpers.InvariantFormatSettings: TFormatSettings;
 begin
@@ -324,6 +338,8 @@ var
   RttiType: TRttiType;
   Prop: TRttiProperty;
   PropValue: TValue;
+  JsonPropName: string;
+  JsonPropValue: TJSONValue;
 begin
   if Obj = nil then
     Exit(nil);
@@ -336,6 +352,9 @@ begin
 
   for Prop in RttiType.GetProperties do
   begin
+    if IsInterfaceGeneratedProperty(Prop) then
+      Continue;
+
     if not Prop.IsReadable then
       Continue;
 
@@ -343,7 +362,9 @@ begin
       Continue;
 
     PropValue := Prop.GetValue(Obj);
-    Result.AddPair(GetJsonPropertyName(Prop), TValueToJson(PropValue));
+    JsonPropName := GetJsonPropertyName(Prop);
+    JsonPropValue := TValueToJson(PropValue);
+    Result.AddPair(JsonPropName, JsonPropValue);
   end;
 end;
 
@@ -505,6 +526,9 @@ begin
   try
     for Prop in RttiType.GetProperties do
     begin
+      if IsInterfaceGeneratedProperty(Prop) then
+        Continue;
+
       if not Prop.IsWritable then
         Continue;
 
@@ -870,4 +894,3 @@ begin
 end;
 
 end.
-

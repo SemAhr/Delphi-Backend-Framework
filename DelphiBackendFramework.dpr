@@ -62,13 +62,24 @@ uses
   Logger in 'Shared\Logging\Logger.pas',
   App.Options in 'Shared\Options\App.Options.pas',
   App.Options.Loader in 'Shared\Options\App.Options.Loader.pas',
-  Auth.Controller in 'Src\Presentation\Controllers\Auth.Controller.pas',
+  Root.Controller in 'Src\Presentation\Controllers\Root.Controller.pas',
   Jwt.Entity in 'Src\Domain\Jwt.Entity.pas',
   Role in 'Src\Domain\Role.pas',
   Bootstrap in 'Src\Bootstrap.pas',
   Dto.Binder.Context in 'Dto\Context\Dto.Binder.Context.pas',
-  Error.Dto in 'Dto\Contracts\Error.Dto.pas',
-  Dto.Port in 'Dto\Ports\Dto.Port.pas';
+  Dto.Port in 'Dto\Ports\Dto.Port.pas',
+  SignIn.Request.Dto in 'Src\Presentation\Contracts\SignIn.Request.Dto.pas',
+  SignIn.Response.Dto in 'Src\Presentation\Contracts\SignIn.Response.Dto.pas',
+  SignIn.UseCase in 'Src\Application\UseCases\SignIn.UseCase.pas',
+  SignIn.UseCase.Port in 'Src\Application\Ports\SignIn.UseCase.Port.pas',
+  ActivateReport.UseCase.Port in 'Src\Application\Ports\ActivateReport.UseCase.Port.pas',
+  DeactivateReport.UseCase.Port in 'Src\Application\Ports\DeactivateReport.UseCase.Port.pas',
+  DeactivateReport.UseCase in 'Src\Application\UseCases\DeactivateReport.UseCase.pas',
+  ActivateReport.UseCase in 'Src\Application\UseCases\ActivateReport.UseCase.pas',
+  ActivateReport.Dto in 'Src\Presentation\Contracts\ActivateReport.Dto.pas',
+  DeactivateReport.Dto in 'Src\Presentation\Contracts\DeactivateReport.Dto.pas',
+  Success.Dto in 'Src\Presentation\Contracts\Success.Dto.pas',
+  Utils.Controller in 'Src\Presentation\Controllers\Utils.Controller.pas';
 
 begin
   try

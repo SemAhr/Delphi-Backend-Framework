@@ -23,7 +23,7 @@ type
 implementation
 
 uses
-  AppExceptions;
+  HttpExceptions;
 
 
 { TDtoBindingContext }
@@ -66,7 +66,7 @@ begin
   if ErrorCount = 0 then
     Exit;
 
-  raise EBadRequestAppException.Create(FErrors.ToArray);
+  raise EBadRequestException.Create(FErrors.ToArray);
 end;
 
 end.

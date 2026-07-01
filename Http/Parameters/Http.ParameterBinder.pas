@@ -15,6 +15,9 @@ type
   TParameterBinder = class(TInterfacedObject, IParameterBinder)
   private
     FBodyBinder: IBodyBinder;
+    FRttiContext: TRttiContext;
+
+    function GetParameterRttiType(const ADescriptor: TParameterDescriptor): TRttiType;
 
     function FromContext(const AContext: TContext; const ADescriptor: TParameterDescriptor): TValue;
     function FromRoute(const AContext: TContext; const ADescriptor: TParameterDescriptor): TValue;
@@ -32,7 +35,19 @@ implementation
 uses
   Http.Parameter.Binding,
   Http.ValueConverter,
-  AppExceptions;
+  AppExceptions,
+  HttpExceptions;
+
+function TParameterBinder.GetParameterRttiType(const ADescriptor: TParameterDescriptor): TRttiType;
+begin
+  Result := FRttiContext.GetType(ADescriptor.ParameterType);
+
+  if Result = nil then
+    raise EBadRequestException.Create(Format(
+      'Parameter "%s" does not have RTTI type information.',
+      [ADescriptor.Name]
+    ));
+end;
 
 constructor TParameterBinder.Create(const ABodyBinder: IBodyBinder);
 begin
@@ -41,6 +56,7 @@ begin
   if ABodyBinder = nil then
     raise EMissingDependencyException.Create('Body binder is required.');
 
+  FRttiContext := TRttiContext.Create;
   FBodyBinder := ABodyBinder;
 end;
 
@@ -63,19 +79,19 @@ begin
       Exit(FromBody(AContext, ADescriptor));
   end;
 
-  raise EBadRequestAppException.CreateFmt(
+  raise EBadRequestException.Create(Format(
     'Unsupported binding source for parameter "%s".',
     [ADescriptor.Name]
-  );
+  ));
 end;
 
 function TParameterBinder.FromContext(const AContext: TContext; const ADescriptor: TParameterDescriptor): TValue;
 begin
-  if ADescriptor.ParameterType.Handle <> TypeInfo(TContext) then
-    raise EBadRequestAppException.CreateFmt(
+  if ADescriptor.ParameterType <> TypeInfo(TContext) then
+    raise EBadRequestException.Create(Format(
       'Parameter "%s" marked as FromContext must be THttpContext.',
       [ADescriptor.Name]
-    );
+    ));
 
   Result := TValue.From<TContext>(AContext);
 end;
@@ -84,79 +100,90 @@ function TParameterBinder.FromRoute(const AContext: TContext; const ADescriptor:
 var
   RawValue: string;
   ErrorMessage: string;
+  ParameterType: TRttiType;
 begin
   if not AContext.Request.RouteParams.TryGetValue(ADescriptor.SourceName, RawValue) then
-    raise EBadRequestAppException.CreateFmt(
+    raise EBadRequestException.Create(Format(
       'Route parameter "%s" is required.',
       [ADescriptor.SourceName]
-    );
+    ));
+
+  ParameterType := GetParameterRttiType(ADescriptor);
 
   if not TValueConverter.TryConvertString(
     RawValue,
-    ADescriptor.ParameterType,
+    ParameterType,
     Result,
     ErrorMessage
   ) then
-    raise EBadRequestAppException.CreateFmt(
+    raise EBadRequestException.Create(Format(
       'Route parameter "%s" %s.',
       [ADescriptor.SourceName, ErrorMessage]
-    );
+    ));
 end;
 
 function TParameterBinder.FromQuery(const AContext: TContext; const ADescriptor: TParameterDescriptor): TValue;
 var
   RawValue: string;
   ErrorMessage: string;
+  ParameterType: TRttiType;
 begin
   if not AContext.Request.QueryParams.TryGetValue(ADescriptor.SourceName, RawValue) then
-    raise EBadRequestAppException.CreateFmt(
+    raise EBadRequestException.Create(Format(
       'Query parameter "%s" is required.',
       [ADescriptor.SourceName]
-    );
+    ));
+
+  ParameterType := GetParameterRttiType(ADescriptor);
 
   if not TValueConverter.TryConvertString(
     RawValue,
-    ADescriptor.ParameterType,
+    ParameterType,
     Result,
     ErrorMessage
   ) then
-    raise EBadRequestAppException.CreateFmt(
+    raise EBadRequestException.Create(Format(
       'Query parameter "%s" %s.',
       [ADescriptor.SourceName, ErrorMessage]
-    );
+    ));
 end;
 
 function TParameterBinder.FromHeader(const AContext: TContext; const ADescriptor: TParameterDescriptor): TValue;
 var
   RawValue: string;
   ErrorMessage: string;
+  ParameterType: TRttiType;
 begin
   var HeaderName := LowerCase(ADescriptor.SourceName);
 
   if not AContext.Request.Headers.TryGetValue(HeaderName, RawValue) then
-    raise EBadRequestAppException.CreateFmt(
+    raise EBadRequestException.Create(Format(
       'Header "%s" is required.',
       [ADescriptor.SourceName]
-    );
+    ));
+
+  ParameterType := GetParameterRttiType(ADescriptor);
 
   if not TValueConverter.TryConvertString(
     RawValue,
-    ADescriptor.ParameterType,
+    ParameterType,
     Result,
     ErrorMessage
   ) then
-    raise EBadRequestAppException.CreateFmt(
+    raise EBadRequestException.Create(Format(
       'Header "%s" %s.',
       [ADescriptor.SourceName, ErrorMessage]
-    );
+    ));
 end;
 
 function TParameterBinder.FromBody(const AContext: TContext; const ADescriptor: TParameterDescriptor): TValue;
 var
   Dto: IDto;
+  ParameterType: TRttiType;
 begin
-  Dto := FBodyBinder.Execute(AContext.Request.Body, ADescriptor.ParameterType);
-  TValue.Make(@Dto, ADescriptor.ParameterType.Handle, Result);
+  ParameterType := GetParameterRttiType(ADescriptor);
+  Dto := FBodyBinder.Execute(AContext.Request.Body, ParameterType);
+  TValue.Make(@Dto, ADescriptor.ParameterType, Result);
 end;
 
 end.

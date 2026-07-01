@@ -21,7 +21,8 @@ type
 implementation
 
 uses
-  AppExceptions;
+  AppExceptions,
+  HttpExceptions;
 
 constructor TBodyBinder.Create(const ADtoBinder: IDtoBinder);
 begin
@@ -36,7 +37,7 @@ end;
 function TBodyBinder.Execute(const ARawBody: string; const ATargetType: TRttiType): IDto;
 begin
   if not (ATargetType is TRttiInstanceType) then
-    raise EBadRequestAppException.Create('Body parameter must be a class DTO that implements IDto.');
+    raise EBadRequestException.Create('Body parameter must be a class DTO that implements IDto.');
 
   FDtoBinder.ParseDto(
     ARawBody,

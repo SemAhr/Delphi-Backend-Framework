@@ -63,6 +63,7 @@ type
 implementation
 
 uses
+  AppExceptions,
   Http.Parameter.Attributes;
 
 constructor TActionMetadata.Create(const AMethod: TRttiMethod; const AParameters: TArray<TParameterDescriptor>);
@@ -118,7 +119,7 @@ begin
     var Source := GetParameterSource(RttiParams[Index], SourceName);
 
     if Source = psUnknown then
-      raise Exception.CreateFmt(
+      raise EInvalidAttributeException.CreateFmt(
         'Parameter "%s" in method "%s" must have a binding attribute.',
         [RttiParams[Index].Name, AMethodInfo.Name]
       );
@@ -129,8 +130,7 @@ begin
     Descriptors[Index].Name := RttiParams[Index].Name;
     Descriptors[Index].Source := Source;
     Descriptors[Index].SourceName := SourceName;
-    Descriptors[Index].RttiParameter := RttiParams[Index];
-    Descriptors[Index].ParameterType := RttiParams[Index].ParamType;
+    Descriptors[Index].ParameterType := RttiParams[Index].ParamType.Handle;
   end;
 
   Result := TActionMetadata.Create(AMethodInfo, Descriptors);

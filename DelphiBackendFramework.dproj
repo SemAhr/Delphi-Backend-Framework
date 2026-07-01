@@ -154,13 +154,24 @@
         <DCCReference Include="Shared\Logging\Logger.pas"/>
         <DCCReference Include="Shared\Options\App.Options.pas"/>
         <DCCReference Include="Shared\Options\App.Options.Loader.pas"/>
-        <DCCReference Include="Src\Presentation\Controllers\Auth.Controller.pas"/>
+        <DCCReference Include="Src\Presentation\Controllers\Root.Controller.pas"/>
         <DCCReference Include="Src\Domain\Jwt.Entity.pas"/>
         <DCCReference Include="Src\Domain\Role.pas"/>
         <DCCReference Include="Src\Bootstrap.pas"/>
         <DCCReference Include="Dto\Context\Dto.Binder.Context.pas"/>
-        <DCCReference Include="Dto\Contracts\Error.Dto.pas"/>
         <DCCReference Include="Dto\Ports\Dto.Port.pas"/>
+        <DCCReference Include="Src\Presentation\Contracts\SignIn.Request.Dto.pas"/>
+        <DCCReference Include="Src\Presentation\Contracts\SignIn.Response.Dto.pas"/>
+        <DCCReference Include="Src\Application\UseCases\SignIn.UseCase.pas"/>
+        <DCCReference Include="Src\Application\Ports\SignIn.UseCase.Port.pas"/>
+        <DCCReference Include="Src\Application\Ports\ActivateReport.UseCase.Port.pas"/>
+        <DCCReference Include="Src\Application\Ports\DeactivateReport.UseCase.Port.pas"/>
+        <DCCReference Include="Src\Application\UseCases\DeactivateReport.UseCase.pas"/>
+        <DCCReference Include="Src\Application\UseCases\ActivateReport.UseCase.pas"/>
+        <DCCReference Include="Src\Presentation\Contracts\ActivateReport.Dto.pas"/>
+        <DCCReference Include="Src\Presentation\Contracts\DeactivateReport.Dto.pas"/>
+        <DCCReference Include="Src\Presentation\Contracts\Success.Dto.pas"/>
+        <DCCReference Include="Src\Presentation\Controllers\Utils.Controller.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

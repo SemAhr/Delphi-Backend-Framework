@@ -19,12 +19,15 @@ type
 
 implementation
 
+uses
+  AppExceptions;
+
 constructor UseMiddlewareAttribute.Create(const AMiddlewareType: TClass; const AOrder: Integer);
 begin
   inherited Create;
 
   if AMiddlewareType = nil then
-    raise Exception.Create('Middleware type is required.');
+    raise EInvalidAttributeException.Create('Middleware type is required.');
 
   FMiddlewareType := AMiddlewareType;
   FOrder := AOrder;

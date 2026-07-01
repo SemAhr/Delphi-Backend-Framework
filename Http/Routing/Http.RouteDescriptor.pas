@@ -20,8 +20,8 @@ type
   private
     FMethod: string;
     FPath: string;
-    FControllerType: TRttiInstanceType;
-    FMethodInfo: TRttiMethod;
+    FControllerType: TClass;
+    FActionName: string;
     FParameters: TArray<TParameterDescriptor>;
     FMiddlewares: TArray<TMiddlewareDescriptor>;
     FAttributes: TArray<TCustomAttribute>;
@@ -32,13 +32,13 @@ type
     /// <param name="AMethod">HTTP verb used to match the request, for example GET or POST.</param>
     /// <param name="APath">Normalized route path used by the router for path matching.</param>
     /// <param name="AControllerType">RTTI type of the controller class that owns the action.</param>
-    /// <param name="AMethodInfo">RTTI metadata of the controller method to invoke.</param>
+    /// <param name="AActionName">Name of the controller action method to invoke.</param>
     /// <param name="AParameters">Binding descriptors for every method parameter.</param>
     constructor Create(
       const AMethod: string;
       const APath: string;
-      const AControllerType: TRttiInstanceType;
-      const AMethodInfo: TRttiMethod;
+      const AControllerType: TClass;
+      const AActionName: string;
       const AParameters: TArray<TParameterDescriptor>;
       const AMiddlewares: TArray<TMiddlewareDescriptor>;
       const AAttributes: TArray<TCustomAttribute>
@@ -57,12 +57,12 @@ type
     /// <summary>
     /// Controller class type used by the action invoker to resolve an instance from the container.
     /// </summary>
-    property ControllerType: TRttiInstanceType read FControllerType;
+    property ControllerType: TClass read FControllerType;
 
     /// <summary>
-    /// Controller method metadata used to invoke the action through RTTI.
+    /// Name of the controller method used to resolve fresh RTTI metadata at request time.
     /// </summary>
-    property MethodInfo: TRttiMethod read FMethodInfo;
+    property ActionName: string read FActionName;
 
     /// <summary>
     /// Parameter binding metadata used to build the argument list before invoking MethodInfo.
@@ -79,8 +79,8 @@ implementation
 constructor TRouteDescriptor.Create(
   const AMethod: string;
   const APath: string;
-  const AControllerType: TRttiInstanceType;
-  const AMethodInfo: TRttiMethod;
+  const AControllerType: TClass;
+  const AActionName: string;
   const AParameters: TArray<TParameterDescriptor>;
   const AMiddlewares: TArray<TMiddlewareDescriptor>;
   const AAttributes: TArray<TCustomAttribute>
@@ -90,7 +90,7 @@ begin
   FMethod := UpperCase(AMethod);
   FPath := APath;
   FControllerType := AControllerType;
-  FMethodInfo := AMethodInfo;
+  FActionName := AActionName;
   FParameters := AParameters;
   FMiddlewares := AMiddlewares;
   FAttributes := AAttributes;

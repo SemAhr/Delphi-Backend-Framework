@@ -188,7 +188,7 @@ begin
         var ControllerType := FRttiContext.GetType(ControllerClass);
 
         if not ImplementsController(ControllerType) then
-          raise Exception.CreateFmt(
+          raise EControllerException.CreateFmt(
             'Controller "%s" must implement IController.',
             [ControllerClass.ClassName]
           );
@@ -219,8 +219,8 @@ begin
                   TRouteDescriptor.Create(
                     HttpAttribute.Method,
                     FullPath,
-                    InstanceType,
-                    MethodInfo,
+                    ControllerClass,
+                    MethodInfo.Name,
                     Metadata.Parameters,
                     RouteMiddlewares,
                     RouteAttributes
