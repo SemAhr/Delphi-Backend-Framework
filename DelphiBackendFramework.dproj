@@ -173,6 +173,9 @@
         <DCCReference Include="Src\Presentation\Contracts\DeactivateReport.Dto.pas"/>
         <DCCReference Include="Src\Presentation\Contracts\Success.Dto.pas"/>
         <DCCReference Include="Src\Presentation\Controllers\Utils.Controller.pas"/>
+        <DCCReference Include="Src\Application\Ports\Jwt.Service.Port.pas"/>
+        <DCCReference Include="Src\Application\Ports\Syscolon.Context.Port.pas"/>
+        <DCCReference Include="Src\Infrastructure\Ports\Syscolon.Client.Factory.Port.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

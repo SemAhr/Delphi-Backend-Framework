@@ -25,19 +25,14 @@ type
     FDeactivateReportUseCase: IDeactivateReportUseCase;
   public
     constructor Create(
-      const SignInUseCase: ISignInUseCase
+      const SignInUseCase: ISignInUseCase;
+      const ActivateReportUseCase: IActivateReportUseCase;
+      const DeactivateReportUseCase: IDeactivateReportUseCase
     );
 
-    [Post('/login/:id')]
+    [Post('/login')]
     [StatusCode(201)]
-    function SignIn(
-      [FromContext] const Context: TContext;
-      [FromCookie('Cookie_1')] const Cookie1: string;
-      [FromHeader('test')] const Test: string;
-      [FromRoute('id')] const Id: string;
-      [FromQuery('id_user')] const IdUser: string;
-      [FromBody] const ARequestDto: TSignInRequestDto
-    ): TSignInResponseDto;
+    function SignIn([FromBody] const ARequestDto: TSignInRequestDto): TSignInResponseDto;
 
     // protected route
     [Post('/activar-reporte')]
@@ -61,7 +56,9 @@ uses
   HttpExceptions;
 
 constructor TRootController.Create(
-  const SignInUseCase: ISignInUseCase
+  const SignInUseCase: ISignInUseCase;
+  const ActivateReportUseCase: IActivateReportUseCase;
+  const DeactivateReportUseCase: IDeactivateReportUseCase
 );
 begin
   if SignInUseCase = nil then
@@ -70,14 +67,7 @@ begin
   FSignInUseCase := SignInUseCase;
 end;
 
-function TRootController.SignIn(
-  const Context: TContext;
-  const Cookie1: string;
-  const Test: string;
-  const Id: string;
-  const IdUser: string;
-  const ARequestDto: TSignInRequestDto
-): TSignInResponseDto;
+function TRootController.SignIn(const ARequestDto: TSignInRequestDto): TSignInResponseDto;
 begin
   Result := FSignInUseCase.Execute(ARequestDto);
 end;
