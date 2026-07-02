@@ -89,6 +89,12 @@ begin
       Exit(psRoute);
     end;
 
+    if Attribute is FromCookieAttribute then
+    begin
+      ASourceName := FromCookieAttribute(Attribute).Name;
+      Exit(psCookie);
+    end;
+
     if Attribute is FromQueryAttribute then
     begin
       ASourceName := FromQueryAttribute(Attribute).Name;

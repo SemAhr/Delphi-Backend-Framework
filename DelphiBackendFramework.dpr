@@ -29,6 +29,7 @@ uses
   Http.Middleware.Pipeline in 'Http\Middleware\Http.Middleware.Pipeline.pas',
   Http.EndpointAttributeHandler.Port in 'Http\EndpointAttributes\Http.EndpointAttributeHandler.Port.pas',
   Http.Attributes in 'Http\Attributes\Http.Attributes.pas',
+  Http.Cookies in 'Http\Http.Cookies.pas',
   Http.Core in 'Http\Http.Core.pas',
   Http.Context in 'Http\Context\Http.Context.pas',
   Http.RouteDescriptor in 'Http\Routing\Http.RouteDescriptor.pas',

@@ -7,6 +7,7 @@ type
     psUnknown,
     psContext,
     psRoute,
+    psCookie,
     psQuery,
     psHeader,
     psBody

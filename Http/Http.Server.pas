@@ -17,6 +17,8 @@ type
     FRouter: IRouter;
 
     function ParseError(const Error: Exception): TResponse;
+    function IsJsonContentType(const AContentType: string): Boolean;
+    procedure EnsureSupportedContentType(const ARequestInfo: TIdHTTPRequestInfo);
 
     procedure HandleCommand(
       AContext: TIdContext;
@@ -41,6 +43,7 @@ uses
   System.Classes,
   System.StrUtils,
   System.Math,
+  Http.Cookies,
   HttpExceptions,
   AppExceptions;
 
@@ -86,26 +89,38 @@ begin
   Result.Method := UpperCase(ARequestInfo.Command);
   Result.Path := ARequestInfo.Document;
 
+  for var I := 0 to ARequestInfo.Cookies.Count - 1 do
+  begin
+    var Cookie := ARequestInfo.Cookies[I];
+    if Cookie = nil then
+      Continue;
+
+    var Name := Cookie.CookieName;
+    if Name.Trim.IsEmpty then
+      Continue;
+
+    var Value := Cookie.Value;
+    Result.Cookies.AddOrSetValue(Name, Value);
+  end;
+
   for var I := 0 to ARequestInfo.RawHeaders.Count - 1 do
   begin
-    var Name := ARequestInfo.RawHeaders.Names[I];
+    var Name := ARequestInfo.RawHeaders.Names[I].ToLower;
+    if Name.Trim.IsEmpty then
+      Continue;
 
-    if Name <> '' then
-      Result.Headers.AddOrSetValue(
-        LowerCase(Name),
-        ARequestInfo.RawHeaders.ValueFromIndex[I]
-      );
+    var Value := ARequestInfo.RawHeaders.Values[Name];
+    Result.Headers.AddOrSetValue(Name, Value);
   end;
 
   for var I := 0 to ARequestInfo.Params.Count - 1 do
   begin
     var Name := ARequestInfo.Params.Names[I];
+    if Name.Trim.IsEmpty then
+      Continue;
 
-    if Name <> '' then
-      Result.QueryParams.AddOrSetValue(
-        Name,
-        ARequestInfo.Params.ValueFromIndex[I]
-      );
+    var Value := ARequestInfo.Params.ValueFromIndex[I];
+    Result.QueryParams.AddOrSetValue(Name, Value);
   end;
 
   if Assigned(ARequestInfo.PostStream) then
@@ -120,6 +135,35 @@ begin
       Free;
     end;
   end;
+end;
+
+function THttpServer.IsJsonContentType(const AContentType: string): Boolean;
+var
+  ContentType: string;
+  SeparatorIndex: Integer;
+begin
+  ContentType := AContentType.Trim.ToLower;
+
+  SeparatorIndex := Pos(';', ContentType);
+  if SeparatorIndex > 0 then
+    ContentType := Copy(ContentType, 1, SeparatorIndex - 1).Trim;
+
+  Result := SameText(ContentType, 'application/json');
+end;
+
+procedure THttpServer.EnsureSupportedContentType(const ARequestInfo: TIdHTTPRequestInfo);
+begin
+  if not Assigned(ARequestInfo.PostStream) or (ARequestInfo.PostStream.Size = 0) then
+    Exit;
+
+  if IsJsonContentType(ARequestInfo.ContentType) then
+    Exit;
+
+  raise EHttpException.Create(
+    415,
+    'Unsupported Media Type',
+    'Only application/json content type is supported.'
+  );
 end;
 
 procedure THttpServer.WriteResponse(const AResponse: TResponse; const AResponseInfo: TIdHTTPResponseInfo);
@@ -139,6 +183,9 @@ begin
   AResponseInfo.ResponseNo := StatusCode;
   AResponseInfo.ContentType := ContentType;
   AResponseInfo.ContentText := AResponse.Body;
+
+  for var Cookie in AResponse.GetCookies do
+    AResponseInfo.CustomHeaders.AddValue('Set-Cookie', TCookieSerializer.Serialize(Cookie));
 end;
 
 function THttpServer.ParseError(const Error: Exception): TResponse;
@@ -252,6 +299,7 @@ begin
 
   try
     try
+      EnsureSupportedContentType(ARequestInfo);
       Request := BuildRequest(ARequestInfo);
       Response := FRouter.Dispatch(Request);
     except

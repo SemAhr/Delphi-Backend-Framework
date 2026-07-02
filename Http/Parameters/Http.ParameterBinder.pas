@@ -21,6 +21,7 @@ type
 
     function FromContext(const AContext: TContext; const ADescriptor: TParameterDescriptor): TValue;
     function FromRoute(const AContext: TContext; const ADescriptor: TParameterDescriptor): TValue;
+    function FromCookie(const AContext: TContext; const ADescriptor: TParameterDescriptor): TValue;
     function FromQuery(const AContext: TContext; const ADescriptor: TParameterDescriptor): TValue;
     function FromHeader(const AContext: TContext; const ADescriptor: TParameterDescriptor): TValue;
     function FromBody(const AContext: TContext; const ADescriptor: TParameterDescriptor): TValue;
@@ -69,6 +70,9 @@ begin
     psRoute:
       Exit(FromRoute(AContext, ADescriptor));
 
+    psCookie:
+      Exit(FromCookie(AContext, ADescriptor));
+
     psQuery:
       Exit(FromQuery(AContext, ADescriptor));
 
@@ -102,7 +106,7 @@ var
   ErrorMessage: string;
   ParameterType: TRttiType;
 begin
-  if not AContext.Request.RouteParams.TryGetValue(ADescriptor.SourceName, RawValue) then
+  if not AContext.Request.RouteParams.TryGetValue(ADescriptor.SourceName.ToLower, RawValue) then
     raise EBadRequestException.Create(Format(
       'Route parameter "%s" is required.',
       [ADescriptor.SourceName]
@@ -122,17 +126,47 @@ begin
     ));
 end;
 
+function TParameterBinder.FromCookie(const AContext: TContext; const ADescriptor: TParameterDescriptor): TValue;
+var
+  RawValue: string;
+  ErrorMessage: string;
+  ParameterType: TRttiType;
+begin
+  AContext.Request.Cookies.TryGetValue(ADescriptor.SourceName, RawValue);
+
+{  if not AContext.Request.Cookies.TryGetValue(ADescriptor.SourceName, RawValue) then
+    raise EBadRequestException.Create(Format(
+      'Cookie "%s" is required.',
+      [ADescriptor.SourceName]
+    ));}
+
+  ParameterType := GetParameterRttiType(ADescriptor);
+
+  if not TValueConverter.TryConvertString(
+    RawValue,
+    ParameterType,
+    Result,
+    ErrorMessage
+  ) then
+    raise EBadRequestException.Create(Format(
+      'Cookie "%s" %s.',
+      [ADescriptor.SourceName, ErrorMessage]
+    ));
+end;
+
 function TParameterBinder.FromQuery(const AContext: TContext; const ADescriptor: TParameterDescriptor): TValue;
 var
   RawValue: string;
   ErrorMessage: string;
   ParameterType: TRttiType;
 begin
-  if not AContext.Request.QueryParams.TryGetValue(ADescriptor.SourceName, RawValue) then
-    raise EBadRequestException.Create(Format(
-      'Query parameter "%s" is required.',
-      [ADescriptor.SourceName]
-    ));
+  AContext.Request.QueryParams.TryGetValue(ADescriptor.SourceName, RawValue);
+
+{ if not AContext.Request.QueryParams.TryGetValue(ADescriptor.SourceName.ToLower, RawValue) then
+   raise EBadRequestException.Create(Format(
+     'Query parameter "%s" is required.',
+     [ADescriptor.SourceName]
+   ));}
 
   ParameterType := GetParameterRttiType(ADescriptor);
 
@@ -154,13 +188,15 @@ var
   ErrorMessage: string;
   ParameterType: TRttiType;
 begin
-  var HeaderName := LowerCase(ADescriptor.SourceName);
+  var HeaderName := ADescriptor.SourceName.ToLower;
 
-  if not AContext.Request.Headers.TryGetValue(HeaderName, RawValue) then
-    raise EBadRequestException.Create(Format(
-      'Header "%s" is required.',
-      [ADescriptor.SourceName]
-    ));
+  AContext.Request.Headers.TryGetValue(HeaderName, RawValue);
+
+{ if not AContext.Request.Headers.TryGetValue(HeaderName.ToLower, RawValue) then
+   raise EBadRequestException.Create(Format(
+     'Header "%s" is required.',
+     [ADescriptor.SourceName]
+   ));}
 
   ParameterType := GetParameterRttiType(ADescriptor);
 
@@ -178,7 +214,7 @@ end;
 
 function TParameterBinder.FromBody(const AContext: TContext; const ADescriptor: TParameterDescriptor): TValue;
 var
-  Dto: IDto;
+  Dto: TObject;
   ParameterType: TRttiType;
 begin
   ParameterType := GetParameterRttiType(ADescriptor);

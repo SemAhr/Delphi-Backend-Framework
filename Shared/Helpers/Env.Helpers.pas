@@ -64,7 +64,7 @@ end;
 
 function ParseBool(const S: string; out Value: Boolean): Boolean;
 begin
-  var L := LowerCase(Trim(S));
+  var L := S.Trim.ToLower;
 
   if (L = '1') or (L = 'true') or (L = 'yes') or (L = 'y') or (L = 'on') then
   begin

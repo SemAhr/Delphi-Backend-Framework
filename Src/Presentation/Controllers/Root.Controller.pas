@@ -6,6 +6,7 @@ uses
   Http.Controller.Port,
   Http.Attributes,
   Http.Parameter.Attributes,
+  Http.Context,
   SignIn.UseCase.Port,
   ActivateReport.UseCase.Port,
   DeactivateReport.UseCase.Port,
@@ -27,9 +28,16 @@ type
       const SignInUseCase: ISignInUseCase
     );
 
-    [Post('/login')]
+    [Post('/login/:id')]
     [StatusCode(201)]
-    function SignIn([FromBody] const ARequestDto: TSignInRequestDto): TSignInResponseDto;
+    function SignIn(
+      [FromContext] const Context: TContext;
+      [FromCookie('Cookie_1')] const Cookie1: string;
+      [FromHeader('test')] const Test: string;
+      [FromRoute('id')] const Id: string;
+      [FromQuery('id_user')] const IdUser: string;
+      [FromBody] const ARequestDto: TSignInRequestDto
+    ): TSignInResponseDto;
 
     // protected route
     [Post('/activar-reporte')]
@@ -62,7 +70,14 @@ begin
   FSignInUseCase := SignInUseCase;
 end;
 
-function TRootController.SignIn(const ARequestDto: TSignInRequestDto): TSignInResponseDto;
+function TRootController.SignIn(
+  const Context: TContext;
+  const Cookie1: string;
+  const Test: string;
+  const Id: string;
+  const IdUser: string;
+  const ARequestDto: TSignInRequestDto
+): TSignInResponseDto;
 begin
   Result := FSignInUseCase.Execute(ARequestDto);
 end;

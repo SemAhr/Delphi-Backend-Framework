@@ -5,8 +5,7 @@ interface
 uses
   System.Rtti,
   Http.BodyBinder.Port,
-  Dto.Binder.Port,
-  Dto.Port;
+  Dto.Binder.Port;
 
 type
   TBodyBinder = class(TInterfacedObject, IBodyBinder)
@@ -15,7 +14,7 @@ type
   public
     constructor Create(const ADtoBinder: IDtoBinder);
 
-    function Execute(const ARawBody: string; const ATargetType: TRttiType): IDto;
+    function Execute(const ARawBody: string; const ATargetType: TRttiType): TObject;
   end;
 
 implementation
@@ -34,7 +33,7 @@ begin
   FDtoBinder := ADtoBinder;
 end;
 
-function TBodyBinder.Execute(const ARawBody: string; const ATargetType: TRttiType): IDto;
+function TBodyBinder.Execute(const ARawBody: string; const ATargetType: TRttiType): TObject;
 begin
   if not (ATargetType is TRttiInstanceType) then
     raise EBadRequestException.Create('Body parameter must be a class DTO that implements IDto.');

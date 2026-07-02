@@ -58,7 +58,7 @@ type
     procedure ParseDto(
       const ARawBody: string;
       const ADtoClass: TClass;
-      out ADto: IDto
+      out ADto: TObject
     ); overload;
 
     function ParseDto<T: IDto>(const ARawBody: string): T; overload;
@@ -541,7 +541,7 @@ end;
 procedure TDtoBinder.ParseDto(
   const ARawBody: string;
   const ADtoClass: TClass;
-  out ADto: IDto
+  out ADto: TObject
 );
 var
   RootValue: TJSONValue;
@@ -571,7 +571,7 @@ begin
     DtoInstance := ADtoClass.Create;
 
     try
-      if not Supports(DtoInstance, IDto, ADto) then
+      if ADtoClass.GetInterfaceEntry(IDto) = nil then
         raise EInvalidAttributeException.CreateFmt(
           'DTO class "%s" must implement IDto.',
           [ADtoClass.ClassName]
@@ -584,9 +584,9 @@ begin
       );
 
       BindingContext.RaiseIfHasErrors;
+      ADto := DtoInstance;
       DtoInstance := nil;
     except
-      ADto := nil;
       DtoInstance.Free;
       raise;
     end;
@@ -601,6 +601,7 @@ var
   RttiContext: TRttiContext;
   RttiType: TRttiType;
   InstanceType: TRttiInstanceType;
+  DtoObject: TObject;
   Dto: IDto;
 begin
   RttiContext := TRttiContext.Create;
@@ -611,7 +612,18 @@ begin
 
   InstanceType := TRttiInstanceType(RttiType);
 
-  ParseDto(ARawBody, InstanceType.MetaclassType, Dto);
+  DtoObject := nil;
+  ParseDto(ARawBody, InstanceType.MetaclassType, DtoObject);
+
+  if not Supports(DtoObject, IDto, Dto) then
+  begin
+    DtoObject.Free;
+    raise EInvalidAttributeException.CreateFmt(
+      'DTO class "%s" must implement IDto.',
+      [InstanceType.MetaclassType.ClassName]
+    );
+  end;
+
   Result := Dto;
 end;
 

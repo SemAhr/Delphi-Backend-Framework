@@ -121,6 +121,7 @@
         <DCCReference Include="Http\Middleware\Http.Middleware.Pipeline.pas"/>
         <DCCReference Include="Http\EndpointAttributes\Http.EndpointAttributeHandler.Port.pas"/>
         <DCCReference Include="Http\Attributes\Http.Attributes.pas"/>
+        <DCCReference Include="Http\Http.Cookies.pas"/>
         <DCCReference Include="Http\Http.Core.pas"/>
         <DCCReference Include="Http\Context\Http.Context.pas"/>
         <DCCReference Include="Http\Routing\Http.RouteDescriptor.pas"/>

@@ -33,7 +33,8 @@ implementation
 
 uses
   System.TypInfo,
-  AppExceptions;
+  AppExceptions,
+  Http.Parameter.Binding;
 
 constructor TActionInvoker.Create(const AContainer: TAppContainer; const AParameterBinder: IParameterBinder);
 begin
@@ -114,7 +115,13 @@ begin
         [ARoute.ActionName, ARoute.ControllerType.ClassName]
       );
 
-    ReturnValue := MethodInfo.Invoke(Controller, Arguments);
+    try
+      ReturnValue := MethodInfo.Invoke(Controller, Arguments);
+    finally
+      for var Index := 0 to High(ARoute.Parameters) do
+        if (ARoute.Parameters[Index].Source = psBody) and (not Arguments[Index].IsEmpty) and (Arguments[Index].Kind = tkClass) then
+          Arguments[Index].AsObject.Free;
+    end;
 
     if MethodInfo.ReturnType = nil then
       Exit(nil);

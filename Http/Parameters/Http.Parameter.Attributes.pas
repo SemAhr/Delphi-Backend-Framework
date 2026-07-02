@@ -16,6 +16,14 @@ type
     property Name: string read FName;
   end;
 
+  FromCookieAttribute = class(TCustomAttribute)
+  private
+    FName: string;
+  public
+    constructor Create(const AName: string = '');
+    property Name: string read FName;
+  end;
+
   FromQueryAttribute = class(TCustomAttribute)
   private
     FName: string;
@@ -36,11 +44,23 @@ type
 
 implementation
 
+{ FromRouteAttribute }
+
 constructor FromRouteAttribute.Create(const AName: string);
 begin
   inherited Create;
   FName := AName.Trim;
 end;
+
+{ FromCookieAttribute }
+
+constructor FromCookieAttribute.Create(const AName: string);
+begin
+  inherited Create;
+  FName := AName.Trim;
+end;
+
+{ FromQueryAttribute }
 
 constructor FromQueryAttribute.Create(const AName: string);
 begin
@@ -48,9 +68,11 @@ begin
   FName := AName.Trim;
 end;
 
+{ FromHeaderAttribute }
+
 constructor FromHeaderAttribute.Create(const AName: string);
 begin
   inherited Create;
-  FName := LowerCase(AName.Trim);
+  FName := AName.Trim.ToLower
 end;
 end.

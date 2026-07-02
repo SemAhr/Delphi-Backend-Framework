@@ -3,7 +3,7 @@ unit Dto.Binder.Port;
 interface
 
 uses
-  Dto.Port;
+  System.SysUtils;
 
 type
   IDtoBinder = interface
@@ -11,7 +11,7 @@ type
     procedure ParseDto(
       const ARawBody: string;
       const ADtoClass: TClass;
-      out ADto: IDto
+      out ADto: TObject
     ); overload;
   end;
 
