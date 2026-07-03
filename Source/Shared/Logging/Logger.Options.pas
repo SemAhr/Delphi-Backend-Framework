@@ -3,16 +3,21 @@ unit Logger.Options;
 interface
 
 uses
-  Logger.Port;
+  Logger.Port,
+  Options.Port;
 
 type
-  TLoggerOptions = record
+  TLoggerOptions = class(TInterfacedObject, IOptionsSection)
   private
+    FLogLevel: string;
+    FFilePath: string;
+
+    function GetSectionName: string;
     function GetLogLevel: TLogLevel;
   public
-    LogLevel: string;
-    FilePath: string;
-
+    property SectionName: string read GetSectionName;
+    property LogLevel: string read FLogLevel write FLogLevel;
+    property FilePath: string read FFilePath write FFilePath;
     property LogLevelEnum: TLogLevel read GetLogLevel;
 
     class function ToString(const ALogLevel: TLogLevel): string; static;
@@ -23,6 +28,11 @@ implementation
 uses
   System.SysUtils,
   AppExceptions;
+
+function TLoggerOptions.GetSectionName: string;
+begin
+  Result := 'Logger';
+end;
 
 function TLoggerOptions.GetLogLevel: TLogLevel;
 begin

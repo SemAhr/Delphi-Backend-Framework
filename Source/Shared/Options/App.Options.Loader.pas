@@ -16,6 +16,7 @@ type
     class function CloneJsonValue(const AValue: TJSONValue): TJSONValue; static;
     class procedure MergeJsonObjects(const ATarget, ASource: TJSONObject); static;
   public
+    class function Execute: TAppOptions; static;
     class function LoadFromFile(const AFilePath: string): TAppOptions; static;
     class function LoadFromDefaultPath: TAppOptions; static;
   end;
@@ -26,14 +27,24 @@ uses
   System.SysUtils,
   System.IOUtils,
   AppExceptions,
-  Path.Helpers,
-  Json.Helpers;
+  Env.Helpers,
+  Path.Helpers;
+
+class function TAppOptionsLoader.Execute: TAppOptions;
+var
+  AppOptionsFilePath: string;
+begin
+  if TEnv.TryGetString('APP_OPTIONS_FILE_PATH', AppOptionsFilePath) then
+    Exit(LoadFromFile(AppOptionsFilePath));
+
+  Result := LoadFromDefaultPath;
+end;
 
 class function TAppOptionsLoader.LoadFromDefaultPath: TAppOptions;
 begin
   var DefaultJson := LoadJsonObjectFromFile(DefaultOptionsFilePath);
   try
-    Result := TJsonHelpers.ToRecord<TAppOptions>(DefaultJson);
+    Result := TJSONObject(DefaultJson.Clone);
   finally
     DefaultJson.Free;
   end;
@@ -46,7 +57,7 @@ begin
     var LoadedJson := LoadJsonObjectFromFile(AFilePath);
     try
       MergeJsonObjects(DefaultJson, LoadedJson);
-      Result := TJsonHelpers.ToRecord<TAppOptions>(DefaultJson);
+      Result := TJSONObject(DefaultJson.Clone);
     finally
       LoadedJson.Free;
     end;

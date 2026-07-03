@@ -7,6 +7,7 @@ uses
   Http.Attributes,
   Http.Parameter.Attributes,
   Http.Context,
+  Logger.Port,
   SignIn.UseCase.Port,
   ActivateReport.UseCase.Port,
   DeactivateReport.UseCase.Port,
@@ -23,11 +24,13 @@ type
     FSignInUseCase: ISignInUseCase;
     FActivateReportUseCase: IActivateReportUseCase;
     FDeactivateReportUseCase: IDeactivateReportUseCase;
+    FLogger: ILogger;
   public
     constructor Create(
       const SignInUseCase: ISignInUseCase;
       const ActivateReportUseCase: IActivateReportUseCase;
-      const DeactivateReportUseCase: IDeactivateReportUseCase
+      const DeactivateReportUseCase: IDeactivateReportUseCase;
+      const Logger: ILogger
     );
 
     [Post('/login')]
@@ -58,17 +61,32 @@ uses
 constructor TRootController.Create(
   const SignInUseCase: ISignInUseCase;
   const ActivateReportUseCase: IActivateReportUseCase;
-  const DeactivateReportUseCase: IDeactivateReportUseCase
+  const DeactivateReportUseCase: IDeactivateReportUseCase;
+  const Logger: ILogger
 );
 begin
   if SignInUseCase = nil then
     raise EMissingDependencyException.Create('Sign in use case is required.');
 
+  if ActivateReportUseCase = nil then
+    raise EMissingDependencyException.Create('Activate report use case is required.');
+
+  if DeactivateReportUseCase = nil then
+    raise EMissingDependencyException.Create('Deactivate report use case is required.');
+
+  if Logger = nil then
+    raise EMissingDependencyException.Create('Logger is required.');
+
   FSignInUseCase := SignInUseCase;
+  FActivateReportUseCase := ActivateReportUseCase;
+  FDeactivateReportUseCase := DeactivateReportUseCase;
+  FLogger := Logger;
 end;
 
 function TRootController.SignIn(const ARequestDto: TSignInRequestDto): TSignInResponseDto;
 begin
+  FLogger.Info('Lol');
+
   Result := FSignInUseCase.Execute(ARequestDto);
 end;
 

@@ -3,12 +3,10 @@ unit App.Options;
 interface
 
 uses
-  Logger.Options;
+  System.JSON;
 
 type
-  TAppOptions = record
-    Logger: TLoggerOptions;
-  end;
+  TAppOptions = TJSONObject;
 
 implementation
 

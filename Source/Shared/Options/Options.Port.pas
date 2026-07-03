@@ -2,8 +2,19 @@ unit Options.Port;
 
 interface
 
+uses
+  System.Rtti;
+
 type
   TOptionsLoader<T> = reference to function: T;
+  TOptionsLoaderFromFile<T> = reference to function(const AFilePath: string): T;
+
+  IOptionsSection = interface
+    ['{4af1f584-270d-4d52-81d5-f1c3c8b84a89}']
+    function GetSectionName: string;
+
+    property SectionName: string read GetSectionName;
+  end;
 
   IOptions<T> = interface
     ['{9761434b-af2e-44ff-9996-a778beae920a}']
@@ -15,8 +26,12 @@ type
   TOptions<T> = class(TInterfacedObject, IOptions<T>)
   private
     FValue: T;
+  protected
+    function _AddRef: Integer; stdcall;
+    function _Release: Integer; stdcall;
   public
     constructor Create(const Value: T);
+    destructor Destroy; override;
 
     class function From(const Value: T): IOptions<T>; static;
 
@@ -25,10 +40,32 @@ type
 
 implementation
 
+function TOptions<T>._AddRef: Integer;
+begin
+  Result := -1;
+end;
+
+function TOptions<T>._Release: Integer;
+begin
+  Result := -1;
+end;
+
 constructor TOptions<T>.Create(const Value: T);
 begin
   inherited Create;
   FValue := Value;
+end;
+
+destructor TOptions<T>.Destroy;
+var
+  Value: TValue;
+begin
+  Value := TValue.From<T>(FValue);
+
+  if (not Value.IsEmpty) and (Value.Kind = tkClass) then
+    Value.AsObject.Free;
+
+  inherited;
 end;
 
 class function TOptions<T>.From(const Value: T): IOptions<T>;

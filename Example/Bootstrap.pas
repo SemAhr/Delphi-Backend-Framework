@@ -18,13 +18,14 @@ uses
   Container.App,
   Http.Composition,
   Http.Server,
-  Logger.Port,
-  Logger,
+  Logger.Options,
   Root.Controller,
   Utils.Controller,
+  Logger.Port,
   SignIn.UseCase.Port,
   ActivateReport.UseCase.Port,
   DeactivateReport.UseCase.Port,
+  Logger,
   SignIn.UseCase,
   ActivateReport.UseCase,
   DeactivateReport.UseCase;
@@ -40,6 +41,8 @@ begin
   Server := nil;
 
   try
+    App.AddOptions<TLoggerOptions>;
+
     App.AddControllers([
       TRootController,
       TUtilsController

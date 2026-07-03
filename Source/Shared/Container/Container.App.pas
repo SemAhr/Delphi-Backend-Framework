@@ -57,7 +57,7 @@ type
 
     function ResolveConstructorParameter(const AParameter: TRttiParameter; const AResolver: TObject): TValue;
 
-    function ExtractOptionValue<TOptions: record>(const ARootOptions: TValue; const AName: string): TOptions;
+    function ExtractOptionValue<TOptions: class, constructor>(const ARootOptions: TValue): TOptions;
     procedure EnsureOptionsLoaded;
 
     function ImplementsInterfaceContract(const AType: TClass; const AInterfaceType: PTypeInfo): Boolean;
@@ -145,12 +145,16 @@ type
     /// <summary>
     /// Defines the root application options loader. The loader is executed only once, lazily.
     /// </summary>
-    procedure SetOptionsLoader<TRootOptions: record>(const ALoader: TOptionsLoader<TRootOptions>);
+    procedure SetOptionsLoader<TRootOptions: class>(const ALoader: TOptionsLoader<TRootOptions>);
 
     /// <summary>
-    /// Registers a record options section by field name from the root options record.
+    /// Registers an options class and maps it from its JSON section.
     /// </summary>
-    procedure AddOptions<TOptions: record>(const AName: string);
+    procedure AddOptions<TOptions: class, constructor>;
+
+    function GetGlobalOptions: TValue;
+
+    function GetOptions<TOptions: class, constructor>: TOptions;
 
     /// <summary>
     /// Registers a controller class and stores it for automatic route discovery.
@@ -213,12 +217,16 @@ implementation
 
 uses
   System.SysUtils,
+  System.JSON,
+  Env.Helpers,
   AppExceptions,
   App.Options,
   App.Options.Loader,
-  Logger.Options,
+  Json.Helpers,
   Http.Middleware.Port,
   Http.EndpointAttributeHandler.Port;
+
+{ TAppContainer }
 
 constructor TAppContainer.Create;
 begin
@@ -230,8 +238,7 @@ begin
   FOptionsRegistrations := TList<TOptionsRegistration>.Create;
   FOptionsLoaded := False;
 
-  SetOptionsLoader<TAppOptions>(TAppOptionsLoader.LoadFromDefaultPath);
-  AddOptions<TLoggerOptions>('Logger');
+  SetOptionsLoader<TAppOptions>(TAppOptionsLoader.Execute);
 end;
 
 destructor TAppContainer.Destroy;
@@ -244,6 +251,8 @@ begin
   inherited;
 end;
 
+{$REGION 'private'}
+
 function TAppContainer.GetClassType(const ATypeInfo: PTypeInfo): TClass;
 begin
   if (ATypeInfo = nil) or (ATypeInfo.Kind <> tkClass) then
@@ -252,121 +261,12 @@ begin
   Result := GetTypeData(ATypeInfo).ClassType;
 end;
 
-function TAppContainer.GetControllerTypes: TArray<TClass>;
-begin
-  Result := FControllerTypes.ToArray;
-end;
-
-function TAppContainer.GetGlobalMiddlewares: TArray<TMiddlewareDescriptor>;
-begin
-  Result := FGlobalMiddlewares.ToArray;
-end;
-
-function TAppContainer.GetAttributeHandlerTypes: TArray<TClass>;
-begin
-  Result := FAttributeHandlerTypes.ToArray;
-end;
-
-function TAppContainer.ImplementsInterfaceContract(const AType: TClass; const AInterfaceType: PTypeInfo): Boolean;
-var
-  RttiContext: TRttiContext;
-  RttiType: TRttiType;
-  InterfaceGuid: TGUID;
-begin
-  Result := False;
-
-  if (AType = nil) or (AInterfaceType = nil) then
-    Exit;
-
-  InterfaceGuid := GetTypeData(AInterfaceType).Guid;
-
-  RttiContext := TRttiContext.Create;
-  RttiType := RttiContext.GetType(AType);
-
-  if not (RttiType is TRttiInstanceType) then
-    Exit;
-
-  for var InterfaceType in TRttiInstanceType(RttiType).GetImplementedInterfaces do
-  begin
-    if InterfaceType.GUID = InterfaceGuid then
-      Exit(True);
-  end;
-end;
-
-function TAppContainer.ExtractOptionValue<TOptions>(const ARootOptions: TValue; const AName: string): TOptions;
-var
-  RttiContext: TRttiContext;
-  RttiType: TRttiType;
-  Field: TRttiField;
-  FieldValue: TValue;
-begin
-  if ARootOptions.IsEmpty then
-    raise EMissingDependencyException.Create('Root options are not loaded.');
-
-  RttiContext := TRttiContext.Create;
-  RttiType := RttiContext.GetType(ARootOptions.TypeInfo);
-
-  if (RttiType = nil) or (RttiType.TypeKind <> tkRecord) then
-    raise EMissingDependencyException.Create('Root options must be a record.');
-
-  Field := RttiType.GetField(AName);
-
-  if Field = nil then
-    raise EMissingDependencyException.CreateFmt(
-      'Options field "%s" was not found in root options record.',
-      [AName]
-    );
-
-  FieldValue := Field.GetValue(ARootOptions.GetReferenceToRawData);
-
-  if FieldValue.TypeInfo <> TypeInfo(TOptions) then
-    raise EMissingDependencyException.CreateFmt(
-      'Options field "%s" has type "%s" but "%s" was expected.',
-      [
-        AName,
-        FieldValue.TypeInfo.Name
-      ]
-    );
-
-  Result := FieldValue.AsType<TOptions>;
-end;
-
-procedure TAppContainer.EnsureOptionsLoaded;
-begin
-  if FOptionsLoaded then
-    Exit;
-
-  if not Assigned(FOptionsRootLoader) then
-    Exit;
-
-  FOptionsRootValue := FOptionsRootLoader();
-
-  for var Registration in FOptionsRegistrations do
-    Registration(FOptionsRootValue);
-
-  FOptionsLoaded := True;
-end;
-
 procedure TAppContainer.AddDescriptor(const ADescriptor: TDependencyDescriptor);
 begin
   if ADescriptor.DependencyType = nil then
     raise EMissingDependencyException.Create('Dependency type is required.');
 
   FDescriptors.AddOrSetValue(ADescriptor.DependencyType, ADescriptor);
-end;
-
-function TAppContainer.GetDescriptor(const ATypeInfo: PTypeInfo): TDependencyDescriptor;
-begin
-  EnsureOptionsLoaded;
-
-  if ATypeInfo = nil then
-    raise EMissingDependencyException.Create('Dependency type is required.');
-
-  if not FDescriptors.TryGetValue(ATypeInfo, Result) then
-    raise EMissingDependencyException.CreateFmt(
-      'Type "%s" was not registered in container.',
-      [ATypeInfo.Name]
-    );
 end;
 
 function TAppContainer.FindConstructor(const AImplementationType: TClass): TRttiMethod;
@@ -463,6 +363,117 @@ begin
   end;
 end;
 
+function TAppContainer.ExtractOptionValue<TOptions>(const ARootOptions: TValue): TOptions;
+var
+  RootJson: TJSONObject;
+  SectionName: string;
+  SectionJson: TJSONValue;
+  SectionProbe: TOptions;
+  OptionsSection: IOptionsSection;
+  OptionsTypeName: string;
+begin
+  if ARootOptions.IsEmpty or (ARootOptions.Kind <> tkClass) or not (ARootOptions.AsObject is TJSONObject) then
+    raise EMissingDependencyException.Create('Root options must be a JSON object.');
+
+  OptionsTypeName := TRttiContext.Create.GetType(TypeInfo(TOptions)).Name;
+
+  SectionProbe := TOptions.Create;
+
+  if not Supports(SectionProbe, IOptionsSection, OptionsSection) then
+  begin
+    SectionProbe.Free;
+    raise EMissingDependencyException.CreateFmt(
+      'Options class "%s" must implement IOptionsSection.',
+      [OptionsTypeName]
+    );
+  end;
+
+  SectionName := OptionsSection.SectionName.Trim;
+  OptionsSection := nil;
+
+  if SectionName.IsEmpty then
+    raise EMissingDependencyException.CreateFmt(
+      'Options class "%s" returned an empty section name.',
+      [OptionsTypeName]
+    );
+
+  RootJson := TJSONObject(ARootOptions.AsObject);
+  SectionJson := RootJson.GetValue(SectionName);
+
+  if SectionJson = nil then
+    raise EMissingDependencyException.CreateFmt(
+      'Options section "%s" was not found in root options JSON.',
+      [SectionName]
+    );
+
+  if not (SectionJson is TJSONObject) then
+    raise EMissingDependencyException.CreateFmt(
+      'Options section "%s" must be a JSON object.',
+      [SectionName]
+    );
+
+  Result := TJsonHelpers.ToObject<TOptions>(SectionJson);
+end;
+
+procedure TAppContainer.EnsureOptionsLoaded;
+begin
+  if FOptionsLoaded then
+    Exit;
+
+  if not Assigned(FOptionsRootLoader) then
+    Exit;
+
+  FOptionsRootValue := FOptionsRootLoader();
+
+  for var Registration in FOptionsRegistrations do
+    Registration(FOptionsRootValue);
+
+  FOptionsLoaded := True;
+end;
+
+function TAppContainer.ImplementsInterfaceContract(const AType: TClass; const AInterfaceType: PTypeInfo): Boolean;
+var
+  RttiContext: TRttiContext;
+  RttiType: TRttiType;
+  InterfaceGuid: TGUID;
+begin
+  Result := False;
+
+  if (AType = nil) or (AInterfaceType = nil) then
+    Exit;
+
+  InterfaceGuid := GetTypeData(AInterfaceType).Guid;
+
+  RttiContext := TRttiContext.Create;
+  RttiType := RttiContext.GetType(AType);
+
+  if not (RttiType is TRttiInstanceType) then
+    Exit;
+
+  for var InterfaceType in TRttiInstanceType(RttiType).GetImplementedInterfaces do
+  begin
+    if InterfaceType.GUID = InterfaceGuid then
+      Exit(True);
+  end;
+end;
+
+{$ENDREGION}
+
+function TAppContainer.GetControllerTypes: TArray<TClass>;
+begin
+  Result := FControllerTypes.ToArray;
+end;
+
+function TAppContainer.GetGlobalMiddlewares: TArray<TMiddlewareDescriptor>;
+begin
+  Result := FGlobalMiddlewares.ToArray;
+end;
+
+function TAppContainer.GetAttributeHandlerTypes: TArray<TClass>;
+begin
+  Result := FAttributeHandlerTypes.ToArray;
+end;
+
 function TAppContainer.CreateInstance(const ADescriptor: TDependencyDescriptor; const AResolver: TObject): TObject;
 begin
   if Assigned(ADescriptor.Factory) then
@@ -505,6 +516,20 @@ begin
   Result := ConstructorMethod.Invoke(AImplementationType, Arguments).AsObject;
 end;
 
+function TAppContainer.GetDescriptor(const ATypeInfo: PTypeInfo): TDependencyDescriptor;
+begin
+  EnsureOptionsLoaded;
+
+  if ATypeInfo = nil then
+    raise EMissingDependencyException.Create('Dependency type is required.');
+
+  if not FDescriptors.TryGetValue(ATypeInfo, Result) then
+    raise EMissingDependencyException.CreateFmt(
+      'Type "%s" was not registered in container.',
+      [ATypeInfo.Name]
+    );
+end;
+
 procedure TAppContainer.RegisterInstance(const ATypeInfo: PTypeInfo; const AInstance: TObject);
 begin
   AddSingleton(ATypeInfo, AInstance);
@@ -530,6 +555,11 @@ begin
   TSingletonDependencyDescriptor(Descriptor).OwnsInstance := True;
 
   AddDescriptor(Descriptor);
+end;
+
+procedure TAppContainer.AddSingleton<TDependency, TImplementation>;
+begin
+  AddSingleton(TypeInfo(TDependency), GetClassType(TypeInfo(TImplementation)));
 end;
 
 procedure TAppContainer.AddTransient(const ATypeInfo: PTypeInfo; const AImplementationType: TClass);
@@ -558,11 +588,6 @@ begin
   AddScoped(TypeInfo(TDependency), GetClassType(TypeInfo(TImplementation)));
 end;
 
-procedure TAppContainer.AddSingleton<TDependency, TImplementation>;
-begin
-  AddSingleton(TypeInfo(TDependency), GetClassType(TypeInfo(TImplementation)));
-end;
-
 procedure TAppContainer.SetOptionsLoader<TRootOptions>(const ALoader: TOptionsLoader<TRootOptions>);
 begin
   if not Assigned(ALoader) then
@@ -581,17 +606,14 @@ begin
   FOptionsLoaded := False;
 end;
 
-procedure TAppContainer.AddOptions<TOptions>(const AName: string);
+procedure TAppContainer.AddOptions<TOptions>;
 begin
-  if AName.Trim.IsEmpty then
-    raise EMissingDependencyException.Create('Options name is required.');
-
   var Registration: TOptionsRegistration :=
     procedure(const ARootOptions: TValue)
     begin
       AddSingleton(
         TypeInfo(IOptions<TOptions>),
-        TOptions<TOptions>.Create(ExtractOptionValue<TOptions>(ARootOptions, AName))
+        TOptions<TOptions>.Create(ExtractOptionValue<TOptions>(ARootOptions))
       );
     end;
 
@@ -599,6 +621,18 @@ begin
 
   if FOptionsLoaded then
     Registration(FOptionsRootValue);
+end;
+
+function TAppContainer.GetGlobalOptions: TValue;
+begin
+  EnsureOptionsLoaded;
+  Result := FOptionsRootValue;
+end;
+
+function TAppContainer.GetOptions<TOptions>: TOptions;
+begin
+  EnsureOptionsLoaded;
+  Result := ExtractOptionValue<TOptions>(FOptionsRootValue);
 end;
 
 procedure TAppContainer.AddController(const AControllerType: TClass);
