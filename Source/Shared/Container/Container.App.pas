@@ -5,17 +5,15 @@ interface
 uses
   System.TypInfo,
   System.Rtti,
+  System.JSON,
   System.Generics.Collections,
   Container.DependencyDescriptor,
   Container.Scope,
-  Options.Port,
+  Options.Registry,
   Http.Controller.Port,
   Http.Middleware.Descriptor;
 
 type
-  TOptionsValueLoader = reference to function: TValue;
-  TOptionsRegistration = reference to procedure(const ARootOptions: TValue);
-
   /// <summary>
   /// Root dependency container used to configure the application.
   /// </summary>
@@ -30,10 +28,8 @@ type
     FControllerTypes: TList<TClass>;
     FGlobalMiddlewares: TList<TMiddlewareDescriptor>;
     FAttributeHandlerTypes: TList<TClass>;
-    FOptionsRegistrations: TList<TOptionsRegistration>;
-    FOptionsRootLoader: TOptionsValueLoader;
-    FOptionsRootValue: TValue;
-    FOptionsLoaded: Boolean;
+    FOptions: TOptionsRegistry;
+    FResolutionStack: TList<PTypeInfo>;
 
     /// <summary>
     /// Converts class RTTI into a TClass value used by generic registration methods.
@@ -55,11 +51,32 @@ type
     /// </summary>
     function ResolveDependency(const ATypeInfo: PTypeInfo; const AResolver: TObject): TObject;
 
+    /// <summary>
+    /// Resolves a constructor parameter and converts the resolved object or interface into the exact TValue expected by RTTI invocation.
+    /// </summary>
     function ResolveConstructorParameter(const AParameter: TRttiParameter; const AResolver: TObject): TValue;
 
-    function ExtractOptionValue<TOptions: class, constructor>(const ARootOptions: TValue): TOptions;
-    procedure EnsureOptionsLoaded;
+    /// <summary>
+    /// Registers an already-created singleton and controls whether the descriptor owns the instance.
+    /// </summary>
+    /// <remarks>
+    /// Options wrappers are owned by TOptionsRegistry, so their descriptors are registered with ownership disabled.
+    /// </remarks>
+    procedure AddSingletonInstance(const ATypeInfo: PTypeInfo; const AInstance: TObject; const AOwnsInstance: Boolean);
 
+    /// <summary>
+    /// Adds a dependency type to the active resolution stack and raises when a circular dependency is detected.
+    /// </summary>
+    procedure EnterResolution(const ATypeInfo: PTypeInfo);
+
+    /// <summary>
+    /// Removes a dependency type from the active resolution stack after construction completes.
+    /// </summary>
+    procedure LeaveResolution(const ATypeInfo: PTypeInfo);
+
+    /// <summary>
+    /// Checks whether a class implements the interface contract required by framework components.
+    /// </summary>
     function ImplementsInterfaceContract(const AType: TClass; const AInterfaceType: PTypeInfo): Boolean;
   public
     /// <summary>
@@ -81,8 +98,14 @@ type
     /// </remarks>
     function GetControllerTypes: TArray<TClass>;
 
+    /// <summary>
+    /// Returns the global middleware descriptors in registration order.
+    /// </summary>
     function GetGlobalMiddlewares: TArray<TMiddlewareDescriptor>;
 
+    /// <summary>
+    /// Returns the endpoint attribute handler classes registered through AddAttributeHandler.
+    /// </summary>
     function GetAttributeHandlerTypes: TArray<TClass>;
 
     /// <summary>
@@ -94,6 +117,12 @@ type
     /// </remarks>
     function CreateInstance(const ADescriptor: TDependencyDescriptor; const AResolver: TObject): TObject;
 
+    /// <summary>
+    /// Creates a framework component by selecting its public Create constructor and resolving constructor parameters.
+    /// </summary>
+    /// <remarks>
+    /// Components such as controllers, middleware, and attribute handlers can be constructed without being registered as dependencies.
+    /// </remarks>
     function CreateComponentInstance(const AImplementationType: TClass; const AResolver: TObject): TObject;
 
     /// <summary>
@@ -143,17 +172,26 @@ type
     procedure AddScoped<TDependency; TImplementation: class>; overload;
 
     /// <summary>
-    /// Defines the root application options loader. The loader is executed only once, lazily.
+    /// Defines and immediately executes the root application options loader.
     /// </summary>
-    procedure SetOptionsLoader<TRootOptions: class>(const ALoader: TOptionsLoader<TRootOptions>);
+    /// <remarks>
+    /// The loaded root JSON is cached by the options registry and reused by AddOptions and GetOptions.
+    /// </remarks>
+    procedure SetOptionsLoader(const ALoader: TOptionsValueLoader);
 
     /// <summary>
     /// Registers an options class and maps it from its JSON section.
     /// </summary>
     procedure AddOptions<TOptions: class, constructor>;
 
-    function GetGlobalOptions: TValue;
+    /// <summary>
+    /// Returns the loaded root options JSON.
+    /// </summary>
+    function GetGlobalOptions: TJSONObject;
 
+    /// <summary>
+    /// Extracts and returns an options object from its configured JSON section.
+    /// </summary>
     function GetOptions<TOptions: class, constructor>: TOptions;
 
     /// <summary>
@@ -217,14 +255,11 @@ implementation
 
 uses
   System.SysUtils,
-  System.JSON,
-  Env.Helpers,
   AppExceptions,
-  App.Options,
   App.Options.Loader,
-  Json.Helpers,
   Http.Middleware.Port,
-  Http.EndpointAttributeHandler.Port;
+  Http.EndpointAttributeHandler.Port,
+  Http.Server.Options;
 
 { TAppContainer }
 
@@ -235,15 +270,18 @@ begin
   FControllerTypes := TList<TClass>.Create;
   FGlobalMiddlewares := TList<TMiddlewareDescriptor>.Create;
   FAttributeHandlerTypes := TList<TClass>.Create;
-  FOptionsRegistrations := TList<TOptionsRegistration>.Create;
-  FOptionsLoaded := False;
+  FOptions := TOptionsRegistry.Create;
+  FResolutionStack := TList<PTypeInfo>.Create;
 
-  SetOptionsLoader<TAppOptions>(TAppOptionsLoader.Execute);
+  SetOptionsLoader(TAppOptionsLoader.Execute);
+
+  AddOptions<THttpServerOptions>;
 end;
 
 destructor TAppContainer.Destroy;
 begin
-  FOptionsRegistrations.Free;
+  FResolutionStack.Free;
+  FOptions.Free;
   FAttributeHandlerTypes.Free;
   FGlobalMiddlewares.Free;
   FControllerTypes.Free;
@@ -363,73 +401,73 @@ begin
   end;
 end;
 
-function TAppContainer.ExtractOptionValue<TOptions>(const ARootOptions: TValue): TOptions;
+
+
+procedure TAppContainer.AddSingletonInstance(const ATypeInfo: PTypeInfo; const AInstance: TObject; const AOwnsInstance: Boolean);
 var
-  RootJson: TJSONObject;
-  SectionName: string;
-  SectionJson: TJSONValue;
-  SectionProbe: TOptions;
-  OptionsSection: IOptionsSection;
-  OptionsTypeName: string;
+  Descriptor: TDependencyDescriptor;
 begin
-  if ARootOptions.IsEmpty or (ARootOptions.Kind <> tkClass) or not (ARootOptions.AsObject is TJSONObject) then
-    raise EMissingDependencyException.Create('Root options must be a JSON object.');
+  if ATypeInfo = nil then
+    raise EMissingDependencyException.Create('Dependency type is required.');
 
-  OptionsTypeName := TRttiContext.Create.GetType(TypeInfo(TOptions)).Name;
+  if AInstance = nil then
+    raise EMissingDependencyException.Create('Singleton instance is required.');
 
-  SectionProbe := TOptions.Create;
+  Descriptor := TSingletonDependencyDescriptor.Create(ATypeInfo, AInstance.ClassType, nil);
+  TSingletonDependencyDescriptor(Descriptor).Instance := AInstance;
+  TSingletonDependencyDescriptor(Descriptor).OwnsInstance := AOwnsInstance;
 
-  if not Supports(SectionProbe, IOptionsSection, OptionsSection) then
+  AddDescriptor(Descriptor);
+end;
+
+
+
+procedure TAppContainer.EnterResolution(const ATypeInfo: PTypeInfo);
+var
+  ResolutionPath: string;
+begin
+  if ATypeInfo = nil then
+    raise EMissingDependencyException.Create('Dependency type is required.');
+
+  if FResolutionStack.IndexOf(ATypeInfo) >= 0 then
   begin
-    SectionProbe.Free;
+    ResolutionPath := '';
+
+    for var ResolvingType in FResolutionStack do
+    begin
+      if not ResolutionPath.IsEmpty then
+        ResolutionPath := ResolutionPath + ' -> ';
+
+      ResolutionPath := ResolutionPath + ResolvingType.Name;
+    end;
+
+    if not ResolutionPath.IsEmpty then
+      ResolutionPath := ResolutionPath + ' -> ';
+
+    ResolutionPath := ResolutionPath + ATypeInfo.Name;
+
     raise EMissingDependencyException.CreateFmt(
-      'Options class "%s" must implement IOptionsSection.',
-      [OptionsTypeName]
+      'Circular dependency detected: %s.',
+      [ResolutionPath]
     );
   end;
 
-  SectionName := OptionsSection.SectionName.Trim;
-  OptionsSection := nil;
-
-  if SectionName.IsEmpty then
-    raise EMissingDependencyException.CreateFmt(
-      'Options class "%s" returned an empty section name.',
-      [OptionsTypeName]
-    );
-
-  RootJson := TJSONObject(ARootOptions.AsObject);
-  SectionJson := RootJson.GetValue(SectionName);
-
-  if SectionJson = nil then
-    raise EMissingDependencyException.CreateFmt(
-      'Options section "%s" was not found in root options JSON.',
-      [SectionName]
-    );
-
-  if not (SectionJson is TJSONObject) then
-    raise EMissingDependencyException.CreateFmt(
-      'Options section "%s" must be a JSON object.',
-      [SectionName]
-    );
-
-  Result := TJsonHelpers.ToObject<TOptions>(SectionJson);
+  FResolutionStack.Add(ATypeInfo);
 end;
 
-procedure TAppContainer.EnsureOptionsLoaded;
+procedure TAppContainer.LeaveResolution(const ATypeInfo: PTypeInfo);
+var
+  LastIndex: Integer;
 begin
-  if FOptionsLoaded then
-    Exit;
+  LastIndex := FResolutionStack.Count - 1;
 
-  if not Assigned(FOptionsRootLoader) then
-    Exit;
-
-  FOptionsRootValue := FOptionsRootLoader();
-
-  for var Registration in FOptionsRegistrations do
-    Registration(FOptionsRootValue);
-
-  FOptionsLoaded := True;
+  if (LastIndex >= 0) and (FResolutionStack[LastIndex] = ATypeInfo) then
+    FResolutionStack.Delete(LastIndex)
+  else
+    FResolutionStack.Remove(ATypeInfo);
 end;
+
+
 
 function TAppContainer.ImplementsInterfaceContract(const AType: TClass; const AInterfaceType: PTypeInfo): Boolean;
 var
@@ -476,21 +514,29 @@ end;
 
 function TAppContainer.CreateInstance(const ADescriptor: TDependencyDescriptor; const AResolver: TObject): TObject;
 begin
-  if Assigned(ADescriptor.Factory) then
-    Exit(ADescriptor.Factory(
-      function(const ATypeInfo: PTypeInfo): TObject
-      begin
-        Result := ResolveDependency(ATypeInfo, AResolver);
-      end
-    ));
+  if ADescriptor = nil then
+    raise EMissingDependencyException.Create('Dependency descriptor is required.');
 
-  if ADescriptor.ImplementationType = nil then
-    raise EMissingDependencyException.CreateFmt(
-      'Type "%s" does not have an implementation type or factory.',
-      [ADescriptor.DependencyType.Name]
-    );
+  EnterResolution(ADescriptor.DependencyType);
+  try
+    if Assigned(ADescriptor.Factory) then
+      Exit(ADescriptor.Factory(
+        function(const ATypeInfo: PTypeInfo): TObject
+        begin
+          Result := ResolveDependency(ATypeInfo, AResolver);
+        end
+      ));
 
-  Result := CreateComponentInstance(ADescriptor.ImplementationType, AResolver);
+    if ADescriptor.ImplementationType = nil then
+      raise EMissingDependencyException.CreateFmt(
+        'Type "%s" does not have an implementation type or factory.',
+        [ADescriptor.DependencyType.Name]
+      );
+
+    Result := CreateComponentInstance(ADescriptor.ImplementationType, AResolver);
+  finally
+    LeaveResolution(ADescriptor.DependencyType);
+  end;
 end;
 
 function TAppContainer.CreateComponentInstance(const AImplementationType: TClass; const AResolver: TObject): TObject;
@@ -518,7 +564,7 @@ end;
 
 function TAppContainer.GetDescriptor(const ATypeInfo: PTypeInfo): TDependencyDescriptor;
 begin
-  EnsureOptionsLoaded;
+  FOptions.EnsureLoaded;
 
   if ATypeInfo = nil then
     raise EMissingDependencyException.Create('Dependency type is required.');
@@ -544,17 +590,8 @@ begin
 end;
 
 procedure TAppContainer.AddSingleton(const ATypeInfo: PTypeInfo; const AInstance: TObject);
-var
-  Descriptor: TDependencyDescriptor;
 begin
-  if AInstance = nil then
-    raise EMissingDependencyException.Create('Singleton instance is required.');
-
-  Descriptor := TSingletonDependencyDescriptor.Create(ATypeInfo, AInstance.ClassType, nil);
-  TSingletonDependencyDescriptor(Descriptor).Instance := AInstance;
-  TSingletonDependencyDescriptor(Descriptor).OwnsInstance := True;
-
-  AddDescriptor(Descriptor);
+  AddSingletonInstance(ATypeInfo, AInstance, True);
 end;
 
 procedure TAppContainer.AddSingleton<TDependency, TImplementation>;
@@ -588,51 +625,30 @@ begin
   AddScoped(TypeInfo(TDependency), GetClassType(TypeInfo(TImplementation)));
 end;
 
-procedure TAppContainer.SetOptionsLoader<TRootOptions>(const ALoader: TOptionsLoader<TRootOptions>);
+procedure TAppContainer.SetOptionsLoader(const ALoader: TOptionsValueLoader);
 begin
-  if not Assigned(ALoader) then
-    raise EMissingDependencyException.Create('Options loader is required.');
-
-  FOptionsRootLoader :=
-    function: TValue
-    var
-      RootOptions: TRootOptions;
+  FOptions.SetRootLoader(
+    ALoader,
+    procedure(const ATypeInfo: PTypeInfo; const AInstance: TObject)
     begin
-      RootOptions := ALoader();
-      AddSingleton(TypeInfo(IOptions<TRootOptions>), TOptions<TRootOptions>.Create(RootOptions));
-      Result := TValue.From<TRootOptions>(RootOptions);
-    end;
-
-  FOptionsLoaded := False;
+      AddSingletonInstance(ATypeInfo, AInstance, False);
+    end
+  );
 end;
 
 procedure TAppContainer.AddOptions<TOptions>;
 begin
-  var Registration: TOptionsRegistration :=
-    procedure(const ARootOptions: TValue)
-    begin
-      AddSingleton(
-        TypeInfo(IOptions<TOptions>),
-        TOptions<TOptions>.Create(ExtractOptionValue<TOptions>(ARootOptions))
-      );
-    end;
-
-  FOptionsRegistrations.Add(Registration);
-
-  if FOptionsLoaded then
-    Registration(FOptionsRootValue);
+  FOptions.Add<TOptions>;
 end;
 
-function TAppContainer.GetGlobalOptions: TValue;
+function TAppContainer.GetGlobalOptions: TJSONObject;
 begin
-  EnsureOptionsLoaded;
-  Result := FOptionsRootValue;
+  Result := FOptions.GetGlobal;
 end;
 
 function TAppContainer.GetOptions<TOptions>: TOptions;
 begin
-  EnsureOptionsLoaded;
-  Result := ExtractOptionValue<TOptions>(FOptionsRootValue);
+  Result := FOptions.Get<TOptions>;
 end;
 
 procedure TAppContainer.AddController(const AControllerType: TClass);
@@ -722,7 +738,7 @@ function TAppContainer.Resolve(const ATypeInfo: PTypeInfo): TObject;
 var
   Descriptor: TDependencyDescriptor;
 begin
-  EnsureOptionsLoaded;
+  FOptions.EnsureLoaded;
 
   Descriptor := GetDescriptor(ATypeInfo);
 

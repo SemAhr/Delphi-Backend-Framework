@@ -31,8 +31,6 @@ uses
   DeactivateReport.UseCase;
 
 class procedure TBootstrap.Create;
-const
-  DefaultHttpPort = 4000;
 var
   App: TAppContainer;
   Server: THttpServer;
@@ -54,10 +52,9 @@ begin
     App.AddScoped<IActivateReportUseCase, TActivateReportUseCase>;
     App.AddScoped<IDeactivateReportUseCase, TDeactivateReportUseCase>;
 
-    Server := THttpComposition.CreateDefaultServer(DefaultHttpPort, App);
+    Server := THttpComposition.CreateDefaultServer(App);
     Server.Start;
 
-    Writeln(Format('HTTP server listening on port %d.', [DefaultHttpPort]));
     Writeln('Press Enter to stop...');
     Readln;
   finally

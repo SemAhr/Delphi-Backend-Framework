@@ -35,6 +35,8 @@ type
 
     procedure Start;
     procedure Stop;
+
+    property Server: TIdHTTPServer read FServer;
   end;
 
 implementation
@@ -60,6 +62,8 @@ begin
   FServer.DefaultPort := APort;
   FServer.OnCommandGet := HandleCommand;
   FServer.OnCommandOther := HandleCommand;
+
+  Writeln(Format('HTTP server listening on port %d.', [APort]));
 end;
 
 destructor THttpServer.Destroy;

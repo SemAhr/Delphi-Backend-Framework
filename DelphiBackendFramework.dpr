@@ -83,7 +83,8 @@ uses
   Utils.Controller in 'Example\Presentation\Controllers\Utils.Controller.pas',
   Jwt.Service.Port in 'Example\Application\Ports\Jwt.Service.Port.pas',
   Syscolon.Context.Port in 'Example\Application\Ports\Syscolon.Context.Port.pas',
-  Syscolon.Client.Factory.Port in 'Example\Infrastructure\Ports\Syscolon.Client.Factory.Port.pas';
+  Syscolon.Client.Factory.Port in 'Example\Infrastructure\Ports\Syscolon.Client.Factory.Port.pas',
+  Http.Server.Options in 'Source\Http\Options\Http.Server.Options.pas';
 
 begin
   try

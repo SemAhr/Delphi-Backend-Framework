@@ -11,25 +11,21 @@ uses
 
 type
   THttpComposition = class sealed
+  const
+    DefaultHttpPort = 8080;
   public
     class function CreateDefaultRouter(const ARoutes: TObjectList<TRouteDescriptor>; const AContainer: TAppContainer): IRouter; static;
 
-    class function CreateDefaultServer(
-      const APort: Integer;
-      const ARoutes: TObjectList<TRouteDescriptor>;
-      const AContainer: TAppContainer
-    ): THttpServer; overload; static;
+    class function CreateDefaultServer(const ARoutes: TObjectList<TRouteDescriptor>; const AContainer: TAppContainer): THttpServer; overload; static;
 
-    class function CreateDefaultServer(
-      const APort: Integer;
-      const AContainer: TAppContainer
-    ): THttpServer; overload; static;
+    class function CreateDefaultServer(const AContainer: TAppContainer): THttpServer; overload; static;
   end;
 
 implementation
 
 uses
   System.SysUtils,
+  System.Math,
   AppExceptions,
   Dto.Binder,
   Dto.Binder.Port,
@@ -40,7 +36,8 @@ uses
   Http.BodyBinder,
   Http.BodyBinder.Port,
   Http.ParameterBinder,
-  Http.ParameterBinder.Port;
+  Http.ParameterBinder.Port,
+  Http.Server.Options;
 
 class function THttpComposition.CreateDefaultRouter(const ARoutes: TObjectList<TRouteDescriptor>; const AContainer: TAppContainer): IRouter;
 begin
@@ -53,22 +50,23 @@ begin
   Result := TRouter.Create(ARoutes, ActionInvoker, AContainer);
 end;
 
-class function THttpComposition.CreateDefaultServer(
-  const APort: Integer;
-  const ARoutes: TObjectList<TRouteDescriptor>;
-  const AContainer: TAppContainer
-): THttpServer;
+class function THttpComposition.CreateDefaultServer(const ARoutes: TObjectList<TRouteDescriptor>; const AContainer: TAppContainer): THttpServer;
+var
+  Options: THttpServerOptions;
+  Port: Integer;
 begin
-  Result := THttpServer.Create(
-    APort,
-    THttpComposition.CreateDefaultRouter(ARoutes, AContainer)
+  Options := AContainer.GetOptions<THttpServerOptions>;
+
+  Port := IfThen(
+    Options.Port > 0,
+    Options.Port,
+    DefaultHttpPort
   );
+
+  Result := THttpServer.Create(Port, THttpComposition.CreateDefaultRouter(ARoutes, AContainer));
 end;
 
-class function THttpComposition.CreateDefaultServer(
-  const APort: Integer;
-  const AContainer: TAppContainer
-): THttpServer;
+class function THttpComposition.CreateDefaultServer(const AContainer: TAppContainer): THttpServer;
 var
   Scanner: TControllerScanner;
   Routes: TObjectList<TRouteDescriptor>;
@@ -91,7 +89,7 @@ begin
   end;
 
   try
-    Result := THttpComposition.CreateDefaultServer(APort, Routes, AContainer);
+    Result := THttpComposition.CreateDefaultServer(Routes, AContainer);
   except
     Routes.Free;
     raise;
