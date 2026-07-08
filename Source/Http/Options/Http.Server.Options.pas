@@ -6,11 +6,11 @@ uses
   Options.Port;
 
 type
-  THttpServerOptions = class(TInterfacedObject, IOptionsSection)
+  THttpServerOptions = class(TOptionsSection)
   private
     FPort: Integer;
 
-    function GetSectionName: string;
+    function GetSectionName: string; override;
   public
     property SectionName: string read GetSectionName;
 

@@ -58,9 +58,9 @@ uses
   RttiAttribute.Helpers in 'Source\Shared\Helpers\RttiAttribute.Helpers.pas',
   StringArray.Helpers in 'Source\Shared\Helpers\StringArray.Helpers.pas',
   Options.Port in 'Source\Shared\Options\Options.Port.pas',
-  Logger.Port in 'Source\Shared\Logging\Logger.Port.pas',
-  Logger.Options in 'Source\Shared\Logging\Logger.Options.pas',
-  Logger in 'Source\Shared\Logging\Logger.pas',
+  Logger.Port in 'Example\Infrastructure\Logging\Logger.Port.pas',
+  Logger.Options in 'Example\Infrastructure\Logging\Logger.Options.pas',
+  Logger in 'Example\Infrastructure\Logging\Logger.pas',
   App.Options in 'Source\Shared\Options\App.Options.pas',
   App.Options.Loader in 'Source\Shared\Options\App.Options.Loader.pas',
   Root.Controller in 'Example\Presentation\Controllers\Root.Controller.pas',
@@ -84,7 +84,9 @@ uses
   Jwt.Service.Port in 'Example\Application\Ports\Jwt.Service.Port.pas',
   Syscolon.Context.Port in 'Example\Application\Ports\Syscolon.Context.Port.pas',
   Syscolon.Client.Factory.Port in 'Example\Infrastructure\Ports\Syscolon.Client.Factory.Port.pas',
-  Http.Server.Options in 'Source\Http\Options\Http.Server.Options.pas';
+  Http.Server.Options in 'Source\Http\Options\Http.Server.Options.pas',
+  Options.Registry in 'Source\Shared\Options\Options.Registry.pas',
+  Dependency.Attributes in 'Source\Shared\Dependencies\Dependency.Attributes.pas';
 
 begin
   try

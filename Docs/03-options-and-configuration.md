@@ -2,61 +2,142 @@
 
 The framework exposes typed configuration through `IOptions<T>` and `TOptions<T>`.
 
-Unit:
+Core unit:
 
 ```text
-Shared/Options/Options.Port.pas
+Source/Shared/Options/Options.Port.pas
+```
+
+Registration/runtime unit:
+
+```text
+Source/Shared/Options/Options.Registry.pas
 ```
 
 ## Core types
 
-```pascal
-IOptions<T> = interface
-  function GetValue: T;
-  property Value: T read GetValue;
-end;
+Options are declared as classes that inherit from `TOptionsSection`.
 
-TOptions<T> = class(TInterfacedObject, IOptions<T>)
-end;
+```pascal
+type
+  TOptionsSection = class abstract
+  protected
+    function GetSectionName: string; virtual; abstract;
+  public
+    property SectionName: string read GetSectionName;
+  end;
+
+  IOptions<T: class> = interface
+    function GetValue: T;
+    property Value: T read GetValue;
+  end;
+
+  TOptions<T: class> = class(TInterfacedObject, IOptions<T>)
+  end;
 ```
 
-A dependency can ask for a specific options record directly:
+`TOptionsSection` defines the JSON section name. `IOptions<T>` is the dependency injected into services.
+
+## Declaring an options class
+
+Create a class that inherits from `TOptionsSection` and override `GetSectionName`.
+
+Example:
 
 ```pascal
-constructor TJwtService.Create(const AOptions: IOptions<TJwtOptions>);
+unit Logger.Options;
+
+interface
+
+uses
+  Options.Port;
+
+type
+  TLoggerOptions = class(TOptionsSection)
+  private
+    FLogLevel: string;
+    FFilePath: string;
+
+    function GetSectionName: string; override;
+  public
+    property LogLevel: string read FLogLevel write FLogLevel;
+    property FilePath: string read FFilePath write FFilePath;
+  end;
+
+implementation
+
+function TLoggerOptions.GetSectionName: string;
 begin
+  Result := 'Logger';
+end;
+
+end.
+```
+
+Given this class, the configuration file must contain a `Logger` object:
+
+```json
+{
+  "Logger": {
+    "LogLevel": "INFO",
+    "FilePath": "./Logs/app.log"
+  }
+}
+```
+
+The JSON property names are mapped to writable public/published properties in the options class.
+
+## Consuming options
+
+Dependencies consume options through `IOptions<TSpecificOptions>`.
+
+```pascal
+type
+  TLogger = class(TInterfacedObject, ILogger)
+  private
+    FOptions: TLoggerOptions;
+  public
+    constructor Create(const AOptions: IOptions<TLoggerOptions>);
+  end;
+
+constructor TLogger.Create(const AOptions: IOptions<TLoggerOptions>);
+begin
+  inherited Create;
   FOptions := AOptions.Value;
 end;
 ```
 
+`AOptions.Value` returns the typed options object, for example `TLoggerOptions`.
+
 ## Root options
 
-The framework expects a root record named `TAppOptions`.
+The framework uses a JSON root object.
 
 Unit:
 
 ```text
-Shared/Options/App.Options.pas
+Source/Shared/Options/App.Options.pas
 ```
 
-Default shape:
+Current type:
 
 ```pascal
 type
-  TAppOptions = record
-    Logger: TLoggerOptions;
-  end;
+  TAppOptions = TJSONObject;
 ```
 
-Additional configuration sections should be added as fields:
+The root JSON contains one object per registered section:
 
-```pascal
-type
-  TAppOptions = record
-    Logger: TLoggerOptions;
-    Jwt: TJwtOptions;
-    Database: TDatabaseOptions;
-  end;
+```json
+{
+  "HttpServer": {
+    "Port": 8080
+  },
+  "Logger": {
+    "LogLevel": "INFO",
+    "FilePath": "./Logs/app.log"
+  }
+}
 ```
 
 ## Loader
@@ -66,73 +147,109 @@ The default loader is configured by `TAppContainer`.
 Unit:
 
 ```text
-Shared/Options/App.Options.Loader.pas
+Source/Shared/Options/App.Options.Loader.pas
 ```
 
-Default loader:
+The default loader is:
 
 ```pascal
-TAppOptionsLoader.LoadFromDefaultPath
+TAppOptionsLoader.Execute
 ```
 
-The loader returns a fully populated `TAppOptions` record. The container executes it lazily and only once.
+It loads a JSON object from the default configuration file, optionally merging an override file from `APP_OPTIONS_FILE_PATH`.
+
+The container calls the loader through `TOptionsRegistry.EnsureLoaded` and loads options only once.
 
 ## Registering sections
 
-Use `AddOptions<TOptions>('FieldName')` to expose a section as `IOptions<TOptions>`.
+Use `AddOptions<TOptions>` to expose a section as `IOptions<TOptions>`.
 
 ```pascal
-Container.AddOptions<TJwtOptions>('Jwt');
-Container.AddOptions<TDatabaseOptions>('Database');
+Container.AddOptions<TLoggerOptions>;
+Container.AddOptions<TDatabaseOptions>;
 ```
 
-The field name must exist in `TAppOptions` and its type must match `TOptions`.
+`TOptions` must inherit from `TOptionsSection` and implement `GetSectionName`.
 
 ```pascal
-TAppOptions = record
-  Jwt: TJwtOptions;
+type
+  TDatabaseOptions = class(TOptionsSection)
+  private
+    FConnectionString: string;
+
+    function GetSectionName: string; override;
+  public
+    property ConnectionString: string read FConnectionString write FConnectionString;
+  end;
+
+function TDatabaseOptions.GetSectionName: string;
+begin
+  Result := 'Database';
 end;
 ```
 
-This registers:
+This registration exposes:
 
 ```pascal
-IOptions<TJwtOptions>
+IOptions<TDatabaseOptions>
 ```
 
-## Default logger options
+and expects the root JSON to contain:
 
-`TAppContainer` registers this by default:
+```json
+{
+  "Database": {
+    "ConnectionString": "..."
+  }
+}
+```
+
+## Default options
+
+`TAppContainer` registers HTTP server options by default:
 
 ```pascal
-AddOptions<TLoggerOptions>('Logger');
+AddOptions<THttpServerOptions>;
 ```
 
-So the root options record must include:
+Applications can register their own sections during bootstrap:
 
 ```pascal
-Logger: TLoggerOptions;
+App.AddOptions<TLoggerOptions>;
 ```
 
-## Loading behavior
+## Loading and registration behavior
 
-Options are loaded automatically when the container first resolves a dependency or descriptor.
+Options are loaded automatically when the container first needs registered dependencies or descriptors.
 
 The flow is:
 
 ```mermaid
 flowchart TD
-    A[First Resolve] --> B[EnsureOptionsLoaded]
-    B --> C[Run root loader once]
-    C --> D[Register IOptions<TAppOptions>]
-    D --> E[Extract registered sections]
-    E --> F[Register IOptions<TSection>]
+    A[First dependency resolution] --> B[EnsureLoaded]
+    B --> C[Run root JSON loader once]
+    C --> D[Register IOptions<TJSONObject>]
+    D --> E[Run registered section materializers]
+    E --> F[Extract each TOptionsSection from JSON]
+    F --> G[Create TOptions<TSection>]
+    G --> H[Register IOptions<TSection> in container]
 ```
+
+## Important implementation detail
+
+`IOptions<T>` instances are registered with an exact `TValue` for the closed generic interface, for example:
+
+```pascal
+IOptions<TLoggerOptions>
+```
+
+This avoids reconstructing generic interfaces dynamically during constructor invocation and keeps `AOptions.Value` safe when injected through RTTI.
 
 ## Notes
 
-- Options must be records.
-- The root loader returns one record that may contain nested records.
-- The container does not parse JSON directly.
-- JSON parsing belongs to `TAppOptionsLoader`.
-- Dependencies consume `IOptions<TSpecificOptions>`.
+- Options sections are classes, not records.
+- Every options section must inherit from `TOptionsSection`.
+- `GetSectionName` determines the JSON object name in the root configuration.
+- The root options value is a `TJSONObject`.
+- Dependencies should consume `IOptions<TSpecificOptions>` instead of `TSpecificOptions` directly.
+- `TOptions<T>` owns the contained options object and frees it when the options wrapper is destroyed.

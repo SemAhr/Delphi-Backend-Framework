@@ -1,4 +1,4 @@
-unit Logger.Options;
+ unit Logger.Options;
 
 interface
 
@@ -7,12 +7,12 @@ uses
   Options.Port;
 
 type
-  TLoggerOptions = class(TInterfacedObject, IOptionsSection)
+  TLoggerOptions = class(TOptionsSection)
   private
     FLogLevel: string;
     FFilePath: string;
 
-    function GetSectionName: string;
+    function GetSectionName: string; override;
     function GetLogLevel: TLogLevel;
   public
     property SectionName: string read GetSectionName;

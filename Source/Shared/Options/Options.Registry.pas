@@ -4,13 +4,14 @@ interface
 
 uses
   System.TypInfo,
+  System.Rtti,
   System.JSON,
   System.Generics.Collections,
   Options.Port;
 
 type
   TOptionsValueLoader = reference to function: TJSONObject;
-  TOptionsDescriptorRegistrar = reference to procedure(const ATypeInfo: PTypeInfo; const AInstance: TObject);
+  TOptionsDescriptorRegister = reference to procedure(const ATypeInfo: PTypeInfo; const AInstance: TObject; const AInstanceValue: TValue);
   TOptionsSectionMaterializer = reference to procedure;
 
   TOptionsRegistry = class
@@ -20,26 +21,25 @@ type
     FRootLoader: TOptionsValueLoader;
     FRootValue: TJSONObject;
     FLoaded: Boolean;
-    FDescriptorRegistrar: TOptionsDescriptorRegistrar;
+    FDescriptorRegister: TOptionsDescriptorRegister;
 
-    function Extract<TOptions: class, constructor>(const ARootOptions: TJSONObject): TOptions;
-    procedure RegisterOptionsInstance(const ATypeInfo: PTypeInfo; const AOptionsTypeInfo: PTypeInfo; const AInstance: TObject);
+    function Extract<T: TOptionsSection, constructor>(const ARootOptions: TJSONObject): T;
+    procedure RegisterOptionsInstance(const ATypeInfo: PTypeInfo; const AOptionsTypeInfo: PTypeInfo; const AInstance: TObject; const AInstanceValue: TValue);
   public
     constructor Create;
     destructor Destroy; override;
 
-    procedure SetRootLoader(const ALoader: TOptionsValueLoader; const ADescriptorRegistrar: TOptionsDescriptorRegistrar);
-    procedure Add<TOptions: class, constructor>;
+    procedure SetRootLoader(const ALoader: TOptionsValueLoader; const ADescriptorRegistrar: TOptionsDescriptorRegister);
+    procedure Add<T: TOptionsSection, constructor>;
     procedure EnsureLoaded;
 
     function GetGlobal: TJSONObject;
-    function Get<TOptions: class, constructor>: TOptions;
+    function Get<T: TOptionsSection, constructor>: T;
   end;
 
 implementation
 
 uses
-  System.Rtti,
   System.SysUtils,
   AppExceptions,
   Json.Helpers;
@@ -59,32 +59,24 @@ begin
   inherited;
 end;
 
-function TOptionsRegistry.Extract<TOptions>(const ARootOptions: TJSONObject): TOptions;
+function TOptionsRegistry.Extract<T>(const ARootOptions: TJSONObject): T;
 var
   SectionName: string;
   SectionJson: TJSONValue;
-  SectionProbe: TOptions;
-  OptionsSection: IOptionsSection;
+  SectionProbe: T;
   OptionsTypeName: string;
 begin
   if ARootOptions = nil then
     raise EMissingDependencyException.Create('Root options must be a JSON object.');
 
-  OptionsTypeName := TRttiContext.Create.GetType(TypeInfo(TOptions)).Name;
+  OptionsTypeName := TRttiContext.Create.GetType(TypeInfo(T)).Name;
 
-  SectionProbe := TOptions.Create;
-
-  if not Supports(SectionProbe, IOptionsSection, OptionsSection) then
-  begin
+  SectionProbe := T.Create;
+  try
+    SectionName := SectionProbe.SectionName.Trim;
+  finally
     SectionProbe.Free;
-    raise EMissingDependencyException.CreateFmt(
-      'Options class "%s" must implement IOptionsSection.',
-      [OptionsTypeName]
-    );
   end;
-
-  SectionName := OptionsSection.SectionName.Trim;
-  OptionsSection := nil;
 
   if SectionName.IsEmpty then
     raise EMissingDependencyException.CreateFmt(
@@ -106,13 +98,14 @@ begin
       [SectionName]
     );
 
-  Result := TJsonHelpers.ToObject<TOptions>(SectionJson);
+  Result := TJsonHelpers.ToObject<T>(SectionJson);
 end;
 
 procedure TOptionsRegistry.RegisterOptionsInstance(
   const ATypeInfo: PTypeInfo;
   const AOptionsTypeInfo: PTypeInfo;
-  const AInstance: TObject
+  const AInstance: TObject;
+  const AInstanceValue: TValue
 );
 begin
   if AInstance = nil then
@@ -120,35 +113,44 @@ begin
 
   FInstances.AddOrSetValue(AOptionsTypeInfo, AInstance);
 
-  if Assigned(FDescriptorRegistrar) then
-    FDescriptorRegistrar(ATypeInfo, AInstance);
+  if Assigned(FDescriptorRegister) then
+    FDescriptorRegister(ATypeInfo, AInstance, AInstanceValue);
 end;
 
 procedure TOptionsRegistry.SetRootLoader(
   const ALoader: TOptionsValueLoader;
-  const ADescriptorRegistrar: TOptionsDescriptorRegistrar
+  const ADescriptorRegistrar: TOptionsDescriptorRegister
 );
 begin
   if not Assigned(ALoader) then
     raise EMissingDependencyException.Create('Options loader is required.');
 
   FRootLoader := ALoader;
-  FDescriptorRegistrar := ADescriptorRegistrar;
+  FDescriptorRegister := ADescriptorRegistrar;
   FLoaded := False;
 
   EnsureLoaded;
 end;
 
-procedure TOptionsRegistry.Add<TOptions>;
+procedure TOptionsRegistry.Add<T>;
 var
   Materializer: TOptionsSectionMaterializer;
-  OptionsInstance: TOptions<TOptions>;
+  ExtractedValue: T;
+  OptionsInstance: TOptions<T>;
+  OptionsInterface: IOptions<T>;
 begin
   Materializer :=
     procedure
     begin
-      OptionsInstance := TOptions<TOptions>.Create(Extract<TOptions>(FRootValue));
-      RegisterOptionsInstance(TypeInfo(IOptions<TOptions>), TypeInfo(TOptions), OptionsInstance);
+      ExtractedValue := Extract<T>(FRootValue);
+      OptionsInstance := TOptions<T>.From(ExtractedValue);
+      OptionsInterface := OptionsInstance;
+      RegisterOptionsInstance(
+        TypeInfo(IOptions<T>),
+        TypeInfo(T),
+        OptionsInstance,
+        TValue.From<IOptions<T>>(OptionsInterface)
+      );
     end;
 
   FSectionMaterializers.Add(Materializer);
@@ -160,6 +162,7 @@ end;
 procedure TOptionsRegistry.EnsureLoaded;
 var
   OptionsInstance: TOptions<TJSONObject>;
+  OptionsInterface: IOptions<TJSONObject>;
 begin
   if FLoaded then
     Exit;
@@ -173,7 +176,13 @@ begin
     raise EMissingDependencyException.Create('Root options loader must return a JSON object.');
 
   OptionsInstance := TOptions<TJSONObject>.Create(FRootValue);
-  RegisterOptionsInstance(TypeInfo(IOptions<TJSONObject>), TypeInfo(TJSONObject), OptionsInstance);
+  OptionsInterface := OptionsInstance;
+  RegisterOptionsInstance(
+    TypeInfo(IOptions<TJSONObject>),
+    TypeInfo(TJSONObject),
+    OptionsInstance,
+    TValue.From<IOptions<TJSONObject>>(OptionsInterface)
+  );
 
   for var Materializer in FSectionMaterializers do
     Materializer();
@@ -187,10 +196,10 @@ begin
   Result := FRootValue;
 end;
 
-function TOptionsRegistry.Get<TOptions>: TOptions;
+function TOptionsRegistry.Get<T>: T;
 begin
   EnsureLoaded;
-  Result := Extract<TOptions>(FRootValue);
+  Result := Extract<T>(FRootValue);
 end;
 
 end.

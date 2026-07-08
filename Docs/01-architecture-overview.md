@@ -26,8 +26,7 @@ The framework provides:
 - response mapping;
 - middleware pipeline support;
 - custom endpoint attribute handlers;
-- typed options through `IOptions<T>`;
-- a default logger implementation.
+- typed options through `IOptions<T>`.
 
 ## Application responsibilities
 
@@ -36,7 +35,8 @@ Application code is expected to define:
 - concrete controllers;
 - application services and ports;
 - DTOs;
-- additional options records;
+- additional options sections;
+- external services such as logging implementations;
 - custom middlewares;
 - custom endpoint attributes and handlers;
 - dependency registrations.

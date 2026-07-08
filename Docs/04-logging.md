@@ -1,13 +1,13 @@
-# Logging
+# Logging Example
 
-The framework includes a default logger implementation.
+The logger is not part of the framework core. It lives in the example application as an external-style dependency registered by the application bootstrap.
 
 Units:
 
 ```text
-Shared/Logging/Logger.Port.pas
-Shared/Logging/Logger.Options.pas
-Shared/Logging/Logger.pas
+Example/Infrastructure/Logging/Logger.Port.pas
+Example/Infrastructure/Logging/Logger.Options.pas
+Example/Infrastructure/Logging/Logger.pas
 ```
 
 ## Port
@@ -43,10 +43,28 @@ Values are normalized using trim and uppercase comparison.
 
 ## Options
 
+`TLoggerOptions` is an example options section:
+
 ```pascal
-TLoggerOptions = record
-  LogLevel: string;
-  FilePath: string;
+type
+  TLoggerOptions = class(TOptionsSection)
+  private
+    FLogLevel: string;
+    FFilePath: string;
+
+    function GetSectionName: string; override;
+  public
+    property LogLevel: string read FLogLevel write FLogLevel;
+    property FilePath: string read FFilePath write FFilePath;
+  end;
+```
+
+The section name is defined by `GetSectionName`:
+
+```pascal
+function TLoggerOptions.GetSectionName: string;
+begin
+  Result := 'Logger';
 end;
 ```
 
@@ -61,15 +79,16 @@ The root app config must contain:
 }
 ```
 
-## Default registration
+## Registration
 
-`TAppContainer` registers logger options by default:
+The framework does not register the logger by default. The example application registers it in `Example/Bootstrap.pas`:
 
 ```pascal
-AddOptions<TLoggerOptions>('Logger');
+App.AddOptions<TLoggerOptions>;
+App.AddSingleton<ILogger, TLogger>;
 ```
 
-If `TLogger` is registered as a dependency, it can receive options through constructor injection:
+`TLogger` receives its configuration through constructor injection:
 
 ```pascal
 constructor TLogger.Create(const AOptions: IOptions<TLoggerOptions>);
@@ -90,9 +109,3 @@ It validates:
 - the log file can be opened.
 
 Writes are synchronized using `TCriticalSection`.
-
-## Example registration
-
-```pascal
-Container.AddSingleton<ILogger, TLogger>;
-```

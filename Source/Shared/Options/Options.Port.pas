@@ -9,21 +9,21 @@ type
   TOptionsLoader<T> = reference to function: T;
   TOptionsLoaderFromFile<T> = reference to function(const AFilePath: string): T;
 
-  IOptionsSection = interface
-    ['{4af1f584-270d-4d52-81d5-f1c3c8b84a89}']
-    function GetSectionName: string;
-
+  TOptionsSection = class abstract
+  protected
+    function GetSectionName: string; virtual; abstract;
+  public
     property SectionName: string read GetSectionName;
   end;
 
-  IOptions<T> = interface
+  IOptions<T: class> = interface
     ['{9761434b-af2e-44ff-9996-a778beae920a}']
     function GetValue: T;
 
     property Value: T read GetValue;
   end;
 
-  TOptions<T> = class(TInterfacedObject, IOptions<T>)
+  TOptions<T: class> = class(TInterfacedObject, IOptions<T>)
   private
     FValue: T;
   protected
@@ -33,9 +33,10 @@ type
     constructor Create(const Value: T);
     destructor Destroy; override;
 
-    class function From(const Value: T): IOptions<T>; static;
+    class function From(const Value: T): TOptions<T>; static;
 
     function GetValue: T;
+    property Value: T read GetValue;
   end;
 
 implementation
@@ -68,7 +69,7 @@ begin
   inherited;
 end;
 
-class function TOptions<T>.From(const Value: T): IOptions<T>;
+class function TOptions<T>.From(const Value: T): TOptions<T>;
 begin
   Result := TOptions<T>.Create(Value);
 end;

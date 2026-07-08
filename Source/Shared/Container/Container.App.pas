@@ -9,6 +9,7 @@ uses
   System.Generics.Collections,
   Container.DependencyDescriptor,
   Container.Scope,
+  Options.Port,
   Options.Registry,
   Http.Controller.Port,
   Http.Middleware.Descriptor;
@@ -42,19 +43,19 @@ type
     procedure AddDescriptor(const ADescriptor: TDependencyDescriptor);
 
     /// <summary>
-    /// Finds the public Create constructor with the largest parameter list for constructor injection.
+    /// Finds the public Create constructor marked with InjectAttribute, or the only public Create constructor when unambiguous.
     /// </summary>
     function FindConstructor(const AImplementationType: TClass): TRttiMethod;
 
     /// <summary>
-    /// Resolves one constructor parameter and converts it into the TValue required by RTTI invocation.
+    /// Resolves one dependency as an object instance for existing resolver/factory APIs.
     /// </summary>
     function ResolveDependency(const ATypeInfo: PTypeInfo; const AResolver: TObject): TObject;
 
     /// <summary>
-    /// Resolves a constructor parameter and converts the resolved object or interface into the exact TValue expected by RTTI invocation.
+    /// Resolves one dependency and converts it into the exact TValue required by RTTI invocation.
     /// </summary>
-    function ResolveConstructorParameter(const AParameter: TRttiParameter; const AResolver: TObject): TValue;
+    function ResolveDependencyValue(const AParameter: TRttiParameter; const AResolver: TObject): TValue;
 
     /// <summary>
     /// Registers an already-created singleton and controls whether the descriptor owns the instance.
@@ -63,6 +64,11 @@ type
     /// Options wrappers are owned by TOptionsRegistry, so their descriptors are registered with ownership disabled.
     /// </remarks>
     procedure AddSingletonInstance(const ATypeInfo: PTypeInfo; const AInstance: TObject; const AOwnsInstance: Boolean);
+
+    /// <summary>
+    /// Registers an already-created singleton with an exact RTTI value for interface injection.
+    /// </summary>
+    procedure AddSingletonInstanceValue(const ATypeInfo: PTypeInfo; const AInstance: TObject; const AInstanceValue: TValue; const AOwnsInstance: Boolean);
 
     /// <summary>
     /// Adds a dependency type to the active resolution stack and raises when a circular dependency is detected.
@@ -182,7 +188,7 @@ type
     /// <summary>
     /// Registers an options class and maps it from its JSON section.
     /// </summary>
-    procedure AddOptions<TOptions: class, constructor>;
+    procedure AddOptions<TOptions: TOptionsSection, constructor>;
 
     /// <summary>
     /// Returns the loaded root options JSON.
@@ -192,7 +198,7 @@ type
     /// <summary>
     /// Extracts and returns an options object from its configured JSON section.
     /// </summary>
-    function GetOptions<TOptions: class, constructor>: TOptions;
+    function GetOptions<TOptions: TOptionsSection, constructor>: TOptions;
 
     /// <summary>
     /// Registers a controller class and stores it for automatic route discovery.
@@ -257,6 +263,7 @@ uses
   System.SysUtils,
   AppExceptions,
   App.Options.Loader,
+  Dependency.Attributes,
   Http.Middleware.Port,
   Http.EndpointAttributeHandler.Port,
   Http.Server.Options;
@@ -311,10 +318,14 @@ function TAppContainer.FindConstructor(const AImplementationType: TClass): TRtti
 var
   RttiContext: TRttiContext;
   RttiType: TRttiType;
-  BestParameterCount: Integer;
+  FallbackConstructor: TRttiMethod;
+  ConstructorCount: Integer;
+  InjectConstructorCount: Integer;
 begin
   Result := nil;
-  BestParameterCount := -1;
+  FallbackConstructor := nil;
+  ConstructorCount := 0;
+  InjectConstructorCount := 0;
 
   if AImplementationType = nil then
     Exit;
@@ -333,14 +344,40 @@ begin
     if Method.Visibility <> mvPublic then
       Continue;
 
-    var ParameterCount := Length(Method.GetParameters);
+    if Method.Parent <> RttiType then
+      Continue;
 
-    if ParameterCount > BestParameterCount then
+    Inc(ConstructorCount);
+    FallbackConstructor := Method;
+
+    for var Attribute in Method.GetAttributes do
     begin
-      Result := Method;
-      BestParameterCount := ParameterCount;
+      if Attribute is InjectAttribute then
+      begin
+        Inc(InjectConstructorCount);
+        Result := Method;
+        Break;
+      end;
     end;
   end;
+
+  if InjectConstructorCount > 1 then
+    raise EMissingDependencyException.CreateFmt(
+      'Type "%s" has more than one constructor marked with [Inject].',
+      [AImplementationType.ClassName]
+    );
+
+  if InjectConstructorCount = 1 then
+    Exit;
+
+  if ConstructorCount = 1 then
+    Exit(FallbackConstructor);
+
+  if ConstructorCount > 1 then
+    raise EMissingDependencyException.CreateFmt(
+      'Type "%s" has multiple public Create constructors. Mark one constructor with [Inject].',
+      [AImplementationType.ClassName]
+    );
 end;
 
 function TAppContainer.ResolveDependency(const ATypeInfo: PTypeInfo; const AResolver: TObject): TObject;
@@ -351,7 +388,7 @@ begin
   Result := Resolve(ATypeInfo);
 end;
 
-function TAppContainer.ResolveConstructorParameter(const AParameter: TRttiParameter; const AResolver: TObject): TValue;
+function TAppContainer.ResolveDependencyValue(const AParameter: TRttiParameter; const AResolver: TObject): TValue;
 var
   ParameterType: TRttiType;
   ResolvedObject: TObject;
@@ -365,11 +402,11 @@ begin
       [AParameter.Name]
     );
 
-  ResolvedObject := ResolveDependency(ParameterType.Handle, AResolver);
-
   case ParameterType.TypeKind of
     tkClass:
       begin
+        ResolvedObject := ResolveDependency(ParameterType.Handle, AResolver);
+
         if ResolvedObject = nil then
           raise EMissingDependencyException.CreateFmt(
             'Constructor parameter "%s" could not be resolved.',
@@ -381,6 +418,13 @@ begin
 
     tkInterface:
       begin
+        var Descriptor := GetDescriptor(ParameterType.Handle);
+        if (Descriptor is TSingletonDependencyDescriptor) and
+           TSingletonDependencyDescriptor(Descriptor).HasInstanceValue then
+          Exit(TSingletonDependencyDescriptor(Descriptor).InstanceValue);
+
+        ResolvedObject := ResolveDependency(ParameterType.Handle, AResolver);
+
         if (ResolvedObject = nil) or not Supports(
           ResolvedObject,
           TRttiInterfaceType(ParameterType).GUID,
@@ -388,7 +432,7 @@ begin
         ) then
           raise EMissingDependencyException.CreateFmt(
             'Resolved dependency for constructor parameter "%s" does not implement "%s".',
-            [AParameter.Name, ParameterType.Name]
+            [AParameter.Name, ParameterType.QualifiedName]
           );
 
         TValue.Make(@ResolvedInterface, ParameterType.Handle, Result);
@@ -396,14 +440,22 @@ begin
   else
     raise EMissingDependencyException.CreateFmt(
       'Constructor parameter "%s" has unsupported injectable type "%s".',
-      [AParameter.Name, ParameterType.Name]
+      [AParameter.Name, ParameterType.QualifiedName]
     );
   end;
 end;
 
-
-
 procedure TAppContainer.AddSingletonInstance(const ATypeInfo: PTypeInfo; const AInstance: TObject; const AOwnsInstance: Boolean);
+begin
+  AddSingletonInstanceValue(ATypeInfo, AInstance, TValue.Empty, AOwnsInstance);
+end;
+
+procedure TAppContainer.AddSingletonInstanceValue(
+  const ATypeInfo: PTypeInfo;
+  const AInstance: TObject;
+  const AInstanceValue: TValue;
+  const AOwnsInstance: Boolean
+);
 var
   Descriptor: TDependencyDescriptor;
 begin
@@ -416,11 +468,11 @@ begin
   Descriptor := TSingletonDependencyDescriptor.Create(ATypeInfo, AInstance.ClassType, nil);
   TSingletonDependencyDescriptor(Descriptor).Instance := AInstance;
   TSingletonDependencyDescriptor(Descriptor).OwnsInstance := AOwnsInstance;
+  TSingletonDependencyDescriptor(Descriptor).InstanceValue := AInstanceValue;
+  TSingletonDependencyDescriptor(Descriptor).HasInstanceValue := not AInstanceValue.IsEmpty;
 
   AddDescriptor(Descriptor);
 end;
-
-
 
 procedure TAppContainer.EnterResolution(const ATypeInfo: PTypeInfo);
 var
@@ -466,8 +518,6 @@ begin
   else
     FResolutionStack.Remove(ATypeInfo);
 end;
-
-
 
 function TAppContainer.ImplementsInterfaceContract(const AType: TClass; const AInterfaceType: PTypeInfo): Boolean;
 var
@@ -557,7 +607,7 @@ begin
   SetLength(Arguments, Length(Parameters));
 
   for var Index := 0 to High(Parameters) do
-    Arguments[Index] := ResolveConstructorParameter(Parameters[Index], AResolver);
+    Arguments[Index] := ResolveDependencyValue(Parameters[Index], AResolver);
 
   Result := ConstructorMethod.Invoke(AImplementationType, Arguments).AsObject;
 end;
@@ -629,9 +679,9 @@ procedure TAppContainer.SetOptionsLoader(const ALoader: TOptionsValueLoader);
 begin
   FOptions.SetRootLoader(
     ALoader,
-    procedure(const ATypeInfo: PTypeInfo; const AInstance: TObject)
+    procedure(const ATypeInfo: PTypeInfo; const AInstance: TObject; const AInstanceValue: TValue)
     begin
-      AddSingletonInstance(ATypeInfo, AInstance, False);
+      AddSingletonInstanceValue(ATypeInfo, AInstance, AInstanceValue, False);
     end
   );
 end;

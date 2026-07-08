@@ -3,7 +3,8 @@ unit Container.DependencyDescriptor;
 interface
 
 uses
-  System.TypInfo;
+  System.TypInfo,
+  System.Rtti;
 
 type
   TDependencyLifetime = (
@@ -80,6 +81,8 @@ type
   private
     FInstance: TObject;
     FOwnsInstance: Boolean;
+    FHasInstanceValue: Boolean;
+    FInstanceValue: TValue;
   public
     /// <summary>
     /// Creates a singleton descriptor without an already-created instance.
@@ -100,6 +103,16 @@ type
     /// Cached singleton instance. It is normally created lazily on the first Resolve call.
     /// </summary>
     property Instance: TObject read FInstance write FInstance;
+
+    /// <summary>
+    /// Indicates whether InstanceValue contains an exact RTTI value for the dependency type.
+    /// </summary>
+    property HasInstanceValue: Boolean read FHasInstanceValue write FHasInstanceValue;
+
+    /// <summary>
+    /// Exact RTTI value for already-created dependencies, useful for generic interface instances.
+    /// </summary>
+    property InstanceValue: TValue read FInstanceValue write FInstanceValue;
 
     /// <summary>
     /// Indicates whether this descriptor owns and should free Instance when destroyed.
