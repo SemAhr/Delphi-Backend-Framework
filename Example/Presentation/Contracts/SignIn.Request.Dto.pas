@@ -13,11 +13,13 @@ type
     FPassword: string;
   public
     [Required]
-    [JsonName('username')]
+    [Length(3)]
+    [JsonName('usuario')]
     property Username: string read FUsername write FUsername;
 
     [Required]
-    [JsonName('password')]
+    [Length(16, 20)]
+    [JsonName('clave')]
     property Password: string read FPassword write FPassword;
   end;
 

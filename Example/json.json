@@ -1,0 +1,38 @@
+[
+    {
+        "id": "e7b5a4c2-9f4e-4a99-91a2-6d4a8a1eaf3d-550e8400-e29b-41d4-a716-446655440000",
+        "curp": "SA06EIMBDR5OVM72NY",
+        "nombre": "Dayana",
+        "primer_apellido": "Franecki",
+        "segundo_apellido": "Wolf",
+        "fecha_nacimiento": "1970-08-29",
+        "fecha_desaparicion": "1995-11-22",
+        "fecha_registro": "2003-04-20",
+        "lugar_nacimiento": "COLIMA",
+        "sexo_asignado": "M"
+    },
+    {
+        "id": "g7b5a4c2-9f4e-4a99-91a2-6d4a8a1eaf3d-550e8400-e29b-41d4-a716-446655440011",
+        "curp": "B6PQYBJHZS91YIPXPI",
+        "nombre": "Julian",
+        "primer_apellido": "Neri",
+        "segundo_apellido": "Baños",
+        "fecha_nacimiento": "1995-03-12",
+        "fecha_desaparicion": "2010-05-13",
+        "fecha_registro": "2015-01-27",
+        "lugar_nacimiento": "CDMX",
+        "sexo_asignado": "H"
+    },
+    {
+        "id": "a3b2a4c2-9f4e-4a99-91a2-6d4a8a1eaf3d-550e8400-e29b-41d4-a716-446655440003",
+        "curp": "AEN0ZEUQUDPMXUHVMP",
+        "nombre": "Socorro",
+        "primer_apellido": "Cortazar",
+        "segundo_apellido": "Borges",
+        "fecha_nacimiento": "2002-08-01",
+        "fecha_desaparicion": "2022-12-10",
+        "fecha_registro": "2023-11-15",
+        "lugar_nacimiento": "CAMPECHE",
+        "sexo_asignado": "X"
+    }
+]

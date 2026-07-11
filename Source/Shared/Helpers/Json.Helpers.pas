@@ -16,12 +16,19 @@ type
   public
     { Public serialization entry points }
     class function ToJson<T>(const Value: T): TJSONValue; overload; static;
+    class function ToJson<T>(const Value: T; const AOmitEmpty: Boolean): TJSONValue; overload; static;
     class function ToJson(const Value: TObject): TJSONValue; overload; static;
+    class function ToJson(const Value: TObject; const AOmitEmpty: Boolean): TJSONValue; overload; static;
 
     class function ToString<T>(const Value: T): string; overload; static;
+    class function ToString<T>(const Value: T; const AOmitEmpty: Boolean): string; overload; static;
     class function ToString(const Value: TObject): string; overload; static;
+    class function ToString(const Value: TObject; const AOmitEmpty: Boolean): string; overload; static;
 
     { Public deserialization entry points }
+    class function ToValue<T>(const Json: TJSONValue): T; overload; static;
+    class function ToValue<T>(const Json: string): T; overload; static;
+
     class function ToRecord<T: record>(const Json: TJSONValue): T; overload; static;
     class function ToRecord<T: record>(const Json: string): T; overload; static;
 
@@ -31,6 +38,10 @@ type
     class function ToArray<T>(const Json: TJSONValue): TArray<T>; overload; static;
     class function ToArray<T>(const Json: string): TArray<T>; overload; static;
 
+    class function IsArray<T>: Boolean; static;
+    class function IsObject<T>: Boolean; static;
+    class function IsRecord<T>: Boolean; static;
+
   private
     { Shared low-level utilities }
     class function InvariantFormatSettings: TFormatSettings; static;
@@ -38,11 +49,12 @@ type
     class function DefaultObjectValue(const RttiType: TRttiType): TValue; static;
     class function AreCompatibleArrayElementKinds(const ElementType: TRttiType): Boolean; static;
     class function IsInterfaceGeneratedProperty(const Prop: TRttiProperty): Boolean; static;
+    class function IsEmptyJsonValue(const Value: TJSONValue): Boolean; static;
 
     { Core serialization pipeline }
-    class function TValueToJson(const Value: TValue): TJSONValue; static;
-    class function RecordValueToJsonObject(const Value: TValue): TJSONObject; static;
-    class function ObjectToJsonObject(const Obj: TObject): TJSONObject; static;
+    class function TValueToJson(const Value: TValue; const AOmitEmpty: Boolean = False): TJSONValue; static;
+    class function RecordValueToJsonObject(const Value: TValue; const AOmitEmpty: Boolean = False): TJSONObject; static;
+    class function ObjectToJsonObject(const Obj: TObject; const AOmitEmpty: Boolean = False): TJSONObject; static;
 
     { Core deserialization pipeline }
     class function JsonToTValue(const RttiType: TRttiType; const Json: TJSONValue): TValue; static;
@@ -51,6 +63,7 @@ type
     class function JsonArrayToDynamicArrayValue(const RttiType: TRttiType; const JsonArray: TJSONArray): TValue; static;
 
     class function GetJsonPropertyName(const Prop: TRttiProperty): string; static;
+    class function GetJsonFieldName(const Field: TRttiField): string; static;
   end;
 
 implementation
@@ -137,35 +150,72 @@ begin
   end;
 end;
 
+class function TJsonHelpers.IsEmptyJsonValue(const Value: TJSONValue): Boolean;
+begin
+  Result := True;
+
+  if Value = nil then
+    Exit;
+
+  if Value is TJSONNull then
+    Exit;
+
+  if Value is TJSONString then
+    Exit(TJSONString(Value).Value.Trim.IsEmpty);
+
+  if Value is TJSONObject then
+    Exit(TJSONObject(Value).Count = 0);
+
+  if Value is TJSONArray then
+    Exit(TJSONArray(Value).Count = 0);
+
+  Result := False;
+end;
+
 { ----------------------------------------------------------------------------- }
 { Public serialization entry points                                             }
 { ----------------------------------------------------------------------------- }
 
 class function TJsonHelpers.ToJson<T>(const Value: T): TJSONValue;
+begin
+  Result := ToJson<T>(Value, False);
+end;
+
+class function TJsonHelpers.ToJson<T>(const Value: T; const AOmitEmpty: Boolean): TJSONValue;
 var
   TypedValue: TValue;
 begin
   TypedValue := TValue.From<T>(Value);
 
   if TypedValue.Kind = tkClass then
-    Exit(ToJson(TypedValue.AsObject));
+    Exit(ToJson(TypedValue.AsObject, AOmitEmpty));
 
-  Result := TValueToJson(TypedValue);
+  Result := TValueToJson(TypedValue, AOmitEmpty);
 end;
 
 class function TJsonHelpers.ToJson(const Value: TObject): TJSONValue;
 begin
+  Result := ToJson(Value, False);
+end;
+
+class function TJsonHelpers.ToJson(const Value: TObject; const AOmitEmpty: Boolean): TJSONValue;
+begin
   if Value = nil then
     Exit(TJSONNull.Create);
 
-  Result := ObjectToJsonObject(Value);
+  Result := ObjectToJsonObject(Value, AOmitEmpty);
 end;
 
 class function TJsonHelpers.ToString<T>(const Value: T): string;
+begin
+  Result := ToString<T>(Value, False);
+end;
+
+class function TJsonHelpers.ToString<T>(const Value: T; const AOmitEmpty: Boolean): string;
 var
   JsonValue: TJSONValue;
 begin
-  JsonValue := ToJson<T>(Value);
+  JsonValue := ToJson<T>(Value, AOmitEmpty);
   try
     Result := JsonValue.ToJSON;
   finally
@@ -174,13 +224,18 @@ begin
 end;
 
 class function TJsonHelpers.ToString(const Value: TObject): string;
+begin
+  Result := ToString(Value, False);
+end;
+
+class function TJsonHelpers.ToString(const Value: TObject; const AOmitEmpty: Boolean): string;
 var
   JsonValue: TJSONValue;
 begin
   if Value = nil then
     Exit('null');
 
-  JsonValue := ToJson(Value);
+  JsonValue := ToJson(Value, AOmitEmpty);
   try
     Result := JsonValue.ToJSON;
   finally
@@ -191,6 +246,86 @@ end;
 { ----------------------------------------------------------------------------- }
 { Public deserialization entry points                                           }
 { ----------------------------------------------------------------------------- }
+
+class function TJsonHelpers.ToValue<T>(const Json: TJSONValue): T;
+var
+  RttiContext: TRttiContext;
+  RttiType: TRttiType;
+  TypedValue: TValue;
+begin
+  RttiType := RttiContext.GetType(TypeInfo(T));
+
+  if RttiType = nil then
+    raise EMetadataException.Create('T RTTI could not be resolved.');
+
+  case RttiType.TypeKind of
+    tkRecord:
+      begin
+        if not (Json is TJSONObject) then
+          raise EMetadataException.CreateFmt('Expected JSON object for record "%s".', [RttiType.Name]);
+
+        TypedValue := JsonObjectToRecordValue(RttiType, TJSONObject(Json));
+      end;
+
+    tkClass:
+      begin
+        if (Json = nil) or (Json is TJSONNull) then
+          TypedValue := DefaultObjectValue(RttiType)
+        else
+        begin
+          if not (Json is TJSONObject) then
+            raise EMetadataException.CreateFmt('Expected JSON object for class "%s".', [RttiType.Name]);
+
+          TypedValue := JsonObjectToObjectValue(RttiType, TJSONObject(Json));
+        end;
+      end;
+
+    tkDynArray:
+      begin
+        if not (Json is TJSONArray) then
+          raise EMetadataException.CreateFmt('Expected JSON array for dynamic array "%s".', [RttiType.Name]);
+
+        TypedValue := JsonArrayToDynamicArrayValue(RttiType, TJSONArray(Json));
+      end;
+  else
+    TypedValue := JsonToTValue(RttiType, Json);
+  end;
+
+  Result := TypedValue.AsType<T>;
+end;
+
+class function TJsonHelpers.ToValue<T>(const Json: string): T;
+var
+  JsonValue: TJSONValue;
+  RttiContext: TRttiContext;
+  RttiType: TRttiType;
+  DefaultTypedValue: TValue;
+begin
+  RttiType := RttiContext.GetType(TypeInfo(T));
+
+  if RttiType = nil then
+    raise EMetadataException.Create('T RTTI could not be resolved.');
+
+  if Json.Trim = '' then
+  begin
+    if RttiType.TypeKind = tkClass then
+      DefaultTypedValue := DefaultObjectValue(RttiType)
+    else
+      DefaultTypedValue := DefaultValue(RttiType);
+
+    Exit(DefaultTypedValue.AsType<T>);
+  end;
+
+  JsonValue := TJSONObject.ParseJSONValue(Json);
+  if JsonValue = nil then
+    raise EMetadataException.Create('Invalid JSON.');
+
+  try
+    Result := ToValue<T>(JsonValue);
+  finally
+    JsonValue.Free;
+  end;
+end;
 
 class function TJsonHelpers.ToRecord<T>(const Json: TJSONValue): T;
 var
@@ -303,16 +438,47 @@ begin
   end;
 end;
 
+class function TJsonHelpers.IsArray<T>: Boolean;
+var
+  RttiContext: TRttiContext;
+  RttiType: TRttiType;
+begin
+  RttiType := RttiContext.GetType(TypeInfo(T));
+  Result := (RttiType <> nil) and (RttiType.TypeKind = tkDynArray);
+end;
+
+class function TJsonHelpers.IsObject<T>: Boolean;
+var
+  RttiContext: TRttiContext;
+  RttiType: TRttiType;
+begin
+  RttiType := RttiContext.GetType(TypeInfo(T));
+  Result := (RttiType <> nil) and (RttiType.TypeKind = tkClass);
+end;
+
+class function TJsonHelpers.IsRecord<T>: Boolean;
+var
+  RttiContext: TRttiContext;
+  RttiType: TRttiType;
+begin
+  RttiType := RttiContext.GetType(TypeInfo(T));
+  Result := (RttiType <> nil) and (RttiType.TypeKind = tkRecord);
+end;
+
 { ----------------------------------------------------------------------------- }
 { Core serialization pipeline                                                   }
 { ----------------------------------------------------------------------------- }
 
-class function TJsonHelpers.RecordValueToJsonObject(const Value: TValue): TJSONObject;
+class function TJsonHelpers.RecordValueToJsonObject(const Value: TValue; const AOmitEmpty: Boolean): TJSONObject;
 var
   RttiContext: TRttiContext;
   RttiType: TRttiType;
   Field: TRttiField;
+  Prop: TRttiProperty;
   FieldValue: TValue;
+  PropValue: TValue;
+  JsonMemberName: string;
+  JsonMemberValue: TJSONValue;
   RecordPointer: Pointer;
 begin
   Result := TJSONObject.Create;
@@ -327,19 +493,54 @@ begin
 
   for Field in RttiType.GetFields do
   begin
+    if not (Field.Visibility in [mvPublic, mvPublished]) then
+      Continue;
+
     FieldValue := Field.GetValue(RecordPointer);
-    Result.AddPair(Field.Name, TValueToJson(FieldValue));
+    JsonMemberName := GetJsonFieldName(Field);
+    JsonMemberValue := TValueToJson(FieldValue, AOmitEmpty);
+
+    if AOmitEmpty and IsEmptyJsonValue(JsonMemberValue) then
+    begin
+      JsonMemberValue.Free;
+      Continue;
+    end;
+
+    Result.AddPair(JsonMemberName, JsonMemberValue);
+  end;
+
+  for Prop in RttiType.GetProperties do
+  begin
+    if not Prop.IsReadable then
+      Continue;
+
+    if not (Prop.Visibility in [mvPublic, mvPublished]) then
+      Continue;
+
+    PropValue := Prop.GetValue(RecordPointer);
+    JsonMemberName := GetJsonPropertyName(Prop);
+    JsonMemberValue := TValueToJson(PropValue, AOmitEmpty);
+
+    if AOmitEmpty and IsEmptyJsonValue(JsonMemberValue) then
+    begin
+      JsonMemberValue.Free;
+      Continue;
+    end;
+
+    Result.AddPair(JsonMemberName, JsonMemberValue);
   end;
 end;
 
-class function TJsonHelpers.ObjectToJsonObject(const Obj: TObject): TJSONObject;
+class function TJsonHelpers.ObjectToJsonObject(const Obj: TObject; const AOmitEmpty: Boolean): TJSONObject;
 var
   RttiContext: TRttiContext;
   RttiType: TRttiType;
   Prop: TRttiProperty;
+  Field: TRttiField;
   PropValue: TValue;
-  JsonPropName: string;
-  JsonPropValue: TJSONValue;
+  FieldValue: TValue;
+  JsonMemberName: string;
+  JsonMemberValue: TJSONValue;
 begin
   if Obj = nil then
     Exit(nil);
@@ -349,6 +550,23 @@ begin
   RttiType := RttiContext.GetType(Obj.ClassType);
   if RttiType = nil then
     raise EMetadataException.Create('Could not resolve RTTI for object.');
+
+  for Field in RttiType.GetFields do
+  begin
+    if not (Field.Visibility in [mvPublic, mvPublished]) then
+      Continue;
+
+    FieldValue := Field.GetValue(Obj);
+    JsonMemberName := GetJsonFieldName(Field);
+    JsonMemberValue := TValueToJson(FieldValue, AOmitEmpty);
+
+    if AOmitEmpty and IsEmptyJsonValue(JsonMemberValue) then
+    begin
+      JsonMemberValue.Free;
+      Continue;
+    end;
+    Result.AddPair(JsonMemberName, JsonMemberValue);
+  end;
 
   for Prop in RttiType.GetProperties do
   begin
@@ -362,13 +580,19 @@ begin
       Continue;
 
     PropValue := Prop.GetValue(Obj);
-    JsonPropName := GetJsonPropertyName(Prop);
-    JsonPropValue := TValueToJson(PropValue);
-    Result.AddPair(JsonPropName, JsonPropValue);
+    JsonMemberName := GetJsonPropertyName(Prop);
+    JsonMemberValue := TValueToJson(PropValue, AOmitEmpty);
+
+    if AOmitEmpty and IsEmptyJsonValue(JsonMemberValue) then
+    begin
+      JsonMemberValue.Free;
+      Continue;
+    end;
+    Result.AddPair(JsonMemberName, JsonMemberValue);
   end;
 end;
 
-class function TJsonHelpers.TValueToJson(const Value: TValue): TJSONValue;
+class function TJsonHelpers.TValueToJson(const Value: TValue; const AOmitEmpty: Boolean): TJSONValue;
 var
   JsonArray: TJSONArray;
   Index: Integer;
@@ -428,13 +652,23 @@ begin
       end;
 
     tkRecord:
-      Exit(RecordValueToJsonObject(Value));
+      Exit(RecordValueToJsonObject(Value, AOmitEmpty));
 
     tkDynArray:
       begin
         JsonArray := TJSONArray.Create;
         for Index := 0 to Value.GetArrayLength - 1 do
-          JsonArray.AddElement(TValueToJson(Value.GetArrayElement(Index)));
+        begin
+          var JsonElement := TValueToJson(Value.GetArrayElement(Index), AOmitEmpty);
+
+          if AOmitEmpty and IsEmptyJsonValue(JsonElement) then
+          begin
+            JsonElement.Free;
+            Continue;
+          end;
+
+          JsonArray.AddElement(JsonElement);
+        end;
         Exit(JsonArray);
       end;
 
@@ -473,7 +707,7 @@ begin
         if Value.AsObject = nil then
           Exit(TJSONNull.Create);
 
-        Exit(ObjectToJsonObject(Value.AsObject));
+        Exit(ObjectToJsonObject(Value.AsObject, AOmitEmpty));
       end;
   end;
 
@@ -491,7 +725,8 @@ class function TJsonHelpers.JsonObjectToRecordValue(const RttiType: TRttiType; c
 var
   Buffer: Pointer;
   Field: TRttiField;
-  JsonFieldValue: TJSONValue;
+  Prop: TRttiProperty;
+  JsonMemberValue: TJSONValue;
 begin
   GetMem(Buffer, RttiType.TypeSize);
   try
@@ -499,9 +734,25 @@ begin
 
     for Field in RttiType.GetFields do
     begin
-      JsonFieldValue := JsonObject.GetValue(Field.Name);
-      if JsonFieldValue <> nil then
-        Field.SetValue(Buffer, JsonToTValue(Field.FieldType, JsonFieldValue));
+      if not (Field.Visibility in [mvPublic, mvPublished]) then
+        Continue;
+
+      JsonMemberValue := JsonObject.GetValue(GetJsonFieldName(Field));
+      if JsonMemberValue <> nil then
+        Field.SetValue(Buffer, JsonToTValue(Field.FieldType, JsonMemberValue));
+    end;
+
+    for Prop in RttiType.GetProperties do
+    begin
+      if not Prop.IsWritable then
+        Continue;
+
+      if not (Prop.Visibility in [mvPublic, mvPublished]) then
+        Continue;
+
+      JsonMemberValue := JsonObject.GetValue(GetJsonPropertyName(Prop));
+      if JsonMemberValue <> nil then
+        Prop.SetValue(Buffer, JsonToTValue(Prop.PropertyType, JsonMemberValue));
     end;
 
     TValue.Make(Buffer, RttiType.Handle, Result);
@@ -515,8 +766,10 @@ var
   InstanceType: TRttiInstanceType;
   Instance: TObject;
   Prop: TRttiProperty;
-  JsonFieldValue: TJSONValue;
+  Field: TRttiField;
+  JsonMemberValue: TJSONValue;
   PropValue: TValue;
+  FieldValue: TValue;
 begin
   if not (RttiType is TRttiInstanceType) then
     raise EMetadataException.CreateFmt('Type "%s" is not a class type.', [RttiType.Name]);
@@ -524,6 +777,19 @@ begin
   InstanceType := TRttiInstanceType(RttiType);
   Instance := InstanceType.MetaclassType.Create;
   try
+    for Field in RttiType.GetFields do
+    begin
+      if not (Field.Visibility in [mvPublic, mvPublished]) then
+        Continue;
+
+      JsonMemberValue := JsonObject.GetValue(GetJsonFieldName(Field));
+      if JsonMemberValue <> nil then
+      begin
+        FieldValue := JsonToTValue(Field.FieldType, JsonMemberValue);
+        Field.SetValue(Instance, FieldValue);
+      end;
+    end;
+
     for Prop in RttiType.GetProperties do
     begin
       if IsInterfaceGeneratedProperty(Prop) then
@@ -535,10 +801,10 @@ begin
       if not (Prop.Visibility in [mvPublic, mvPublished]) then
         Continue;
 
-      JsonFieldValue := JsonObject.GetValue(Prop.Name);
-      if JsonFieldValue <> nil then
+      JsonMemberValue := JsonObject.GetValue(GetJsonPropertyName(Prop));
+      if JsonMemberValue <> nil then
       begin
-        PropValue := JsonToTValue(Prop.PropertyType, JsonFieldValue);
+        PropValue := JsonToTValue(Prop.PropertyType, JsonMemberValue);
         Prop.SetValue(Instance, PropValue);
       end;
     end;
@@ -889,6 +1155,27 @@ begin
         Exit(JsonName.Name);
 
       Exit(Prop.Name);
+    end;
+  end;
+end;
+
+class function TJsonHelpers.GetJsonFieldName(const Field: TRttiField): string;
+var
+  Attribute: TCustomAttribute;
+  JsonName: JsonNameAttribute;
+begin
+  Result := Field.Name;
+
+  for Attribute in Field.GetAttributes do
+  begin
+    if Attribute is JsonNameAttribute then
+    begin
+      JsonName := JsonNameAttribute(Attribute);
+
+      if not JsonName.Name.Trim.IsEmpty then
+        Exit(JsonName.Name);
+
+      Exit(Field.Name);
     end;
   end;
 end;

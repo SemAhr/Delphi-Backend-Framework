@@ -32,7 +32,6 @@ type
     constructor Create(const Messages: TArray<string>); overload;
   end;
 
-
   EMissingAttributeException = class(EMetadataException);
   EInvalidAttributeException = class(EMetadataException);
   EUnexpectedAttributeException = class(EMetadataException);

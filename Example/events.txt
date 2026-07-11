@@ -1,0 +1,4 @@
+1. Apertura de cuenta
+2. Depósito de aportaciós social
+3. Depósito en ahorro ordinario
+4. Aportación a capital social

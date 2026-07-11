@@ -150,7 +150,7 @@
         <DCCReference Include="Source\Shared\Helpers\RttiAttribute.Helpers.pas"/>
         <DCCReference Include="Source\Shared\Helpers\StringArray.Helpers.pas"/>
         <DCCReference Include="Source\Shared\Options\Options.Port.pas"/>
-        <DCCReference Include="Example\Infrastructure\Logging\Logger.Port.pas"/>
+        <DCCReference Include="Example\Common\Ports\Logger.Port.pas"/>
         <DCCReference Include="Example\Infrastructure\Logging\Logger.Options.pas"/>
         <DCCReference Include="Example\Infrastructure\Logging\Logger.pas"/>
         <DCCReference Include="Source\Shared\Options\App.Options.pas"/>
@@ -174,11 +174,18 @@
         <DCCReference Include="Example\Presentation\Contracts\Success.Dto.pas"/>
         <DCCReference Include="Example\Presentation\Controllers\Utils.Controller.pas"/>
         <DCCReference Include="Example\Application\Ports\Jwt.Service.Port.pas"/>
-        <DCCReference Include="Example\Application\Ports\Syscolon.Context.Port.pas"/>
-        <DCCReference Include="Example\Infrastructure\Ports\Syscolon.Client.Factory.Port.pas"/>
         <DCCReference Include="Source\Http\Options\Http.Server.Options.pas"/>
         <DCCReference Include="Source\Shared\Options\Options.Registry.pas"/>
         <DCCReference Include="Source\Shared\Dependencies\Dependency.Attributes.pas"/>
+        <DCCReference Include="Example\Application\Ports\Pui.Client.Port.pas"/>
+        <DCCReference Include="Example\Application\Contracts\Report.Dto.pas"/>
+        <DCCReference Include="Example\Application\Contracts\Match.Dto.pas"/>
+        <DCCReference Include="Example\Application\Contracts\Event.Dto.pas"/>
+        <DCCReference Include="Example\Infrastructure\Pui\Pui.pas"/>
+        <DCCReference Include="Example\Infrastructure\Pui\Pui.Options.pas"/>
+        <DCCReference Include="Example\Infrastructure\Pui\Contracts\PuiSignIn.Dto.pas"/>
+        <DCCReference Include="Example\Common\Exceptions\CustomExceptions.pas"/>
+        <DCCReference Include="Example\Application\Contracts\FinalizeSearch.Dto.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

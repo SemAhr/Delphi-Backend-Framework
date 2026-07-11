@@ -34,27 +34,33 @@ type
     property Id: string read FId write FId;
 
     [Required]
+    [Length(18)]
     [JsonName('curp')]
     property Curp: string read FCurp write FCurp;
-
-    [JsonName('nombre')]
-    property Name: string read FName write FName;
-
-    [JsonName('primer_apellido')]
-    property FirstSurname: string read FFirstSurname write FFirstSurname;
-
-    [JsonName('segundo_apellido')]
-    property SecondSurname: string read FSecondSurname write FSecondSurname;
-
-    [JsonName('fecha_nacimiento')]
-    property DateOfBirth: TDate read FDateOfBirth write FDateOfBirth;
-
-    [JsonName('fecha_desaparicion')]
-    property DateOfDisappearance: TDate read FDateOfDisappearance write FDateOfDisappearance;
 
     [Required]
     [JsonName('lugar_nacimiento')]
     property PlaceOfBirth: string read FPlaceOfBirth write FPlaceOfBirth;
+
+    [JsonName('nombre')]
+    [Length(0, 50)]
+    property Name: string read FName write FName;
+
+    [Length(0, 50)]
+    [JsonName('primer_apellido')]
+    property FirstSurname: string read FFirstSurname write FFirstSurname;
+
+    [Length(0, 50)]
+    [JsonName('segundo_apellido')]
+    property SecondSurname: string read FSecondSurname write FSecondSurname;
+
+    [IsDate]
+    [JsonName('fecha_nacimiento')]
+    property DateOfBirth: TDate read FDateOfBirth write FDateOfBirth;
+
+    [IsDate]
+    [JsonName('fecha_desaparicion')]
+    property DateOfDisappearance: TDate read FDateOfDisappearance write FDateOfDisappearance;
 
     [JsonName('sexo_asignado')]
     property AssignedSex: string read FAssignedSex write FAssignedSex;

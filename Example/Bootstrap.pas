@@ -19,13 +19,16 @@ uses
   Http.Composition,
   Http.Server,
   Logger.Options,
+  Pui.Options,
   Root.Controller,
   Utils.Controller,
   Logger.Port,
+  Pui.Client.Port,
   SignIn.UseCase.Port,
   ActivateReport.UseCase.Port,
   DeactivateReport.UseCase.Port,
   Logger,
+  Pui.Client,
   SignIn.UseCase,
   ActivateReport.UseCase,
   DeactivateReport.UseCase;
@@ -40,6 +43,7 @@ begin
 
   try
     App.AddOptions<TLoggerOptions>;
+    App.AddOptions<TPuiOptions>;
 
     App.AddControllers([
       TRootController,
@@ -47,6 +51,7 @@ begin
     ]);
 
     App.AddSingleton<ILogger, TLogger>;
+    App.AddSingleton<IPuiClient, TPuiClient>;
 
     App.AddScoped<ISignInUseCase, TSignInUseCase>;
     App.AddScoped<IActivateReportUseCase, TActivateReportUseCase>;

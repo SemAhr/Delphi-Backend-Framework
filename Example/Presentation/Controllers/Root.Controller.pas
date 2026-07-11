@@ -7,6 +7,7 @@ uses
   Http.Attributes,
   Http.Parameter.Attributes,
   Http.Context,
+  Dependency.Attributes,
   Logger.Port,
   SignIn.UseCase.Port,
   ActivateReport.UseCase.Port,
@@ -24,13 +25,12 @@ type
     FSignInUseCase: ISignInUseCase;
     FActivateReportUseCase: IActivateReportUseCase;
     FDeactivateReportUseCase: IDeactivateReportUseCase;
-    FLogger: ILogger;
   public
+    [Inject]
     constructor Create(
       const SignInUseCase: ISignInUseCase;
       const ActivateReportUseCase: IActivateReportUseCase;
-      const DeactivateReportUseCase: IDeactivateReportUseCase;
-      const Logger: ILogger
+      const DeactivateReportUseCase: IDeactivateReportUseCase
     );
 
     [Post('/login')]
@@ -61,8 +61,7 @@ uses
 constructor TRootController.Create(
   const SignInUseCase: ISignInUseCase;
   const ActivateReportUseCase: IActivateReportUseCase;
-  const DeactivateReportUseCase: IDeactivateReportUseCase;
-  const Logger: ILogger
+  const DeactivateReportUseCase: IDeactivateReportUseCase
 );
 begin
   if SignInUseCase = nil then
@@ -74,34 +73,34 @@ begin
   if DeactivateReportUseCase = nil then
     raise EMissingDependencyException.Create('Deactivate report use case is required.');
 
-  if Logger = nil then
-    raise EMissingDependencyException.Create('Logger is required.');
-
   FSignInUseCase := SignInUseCase;
   FActivateReportUseCase := ActivateReportUseCase;
   FDeactivateReportUseCase := DeactivateReportUseCase;
-  FLogger := Logger;
 end;
 
 function TRootController.SignIn(const ARequestDto: TSignInRequestDto): TSignInResponseDto;
 begin
-  FLogger.Info('Lol');
-
   Result := FSignInUseCase.Execute(ARequestDto);
 end;
 
 function TRootController.ActivateReport(const ARequestDto: TActivateReportDto): TSuccessDto;
 begin
+  Result := TSuccessDto.Create;
+  Result.Message := 'La solicitud de activación del reporte de búsqueda se recibió correctamente.';
 end;
 
 function TRootController.DeactivateReport(const ARequestDto: TDeactivateReportDto): TSuccessDto;
 begin
+  Result := TSuccessDto.Create;
+  Result.Message := 'Reporte desactivado correctamente.';
 end;
 
 { Testing }
 
 function TRootController.ActivateReportTest(const ARequestDto: TActivateReportDto): TSuccessDto;
 begin
+  Result := TSuccessDto.Create;
+  Result.Message := 'La solicitud de activación del reporte de búsqueda se recibió correctamente.';
 end;
 
 end.

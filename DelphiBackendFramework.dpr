@@ -58,7 +58,7 @@ uses
   RttiAttribute.Helpers in 'Source\Shared\Helpers\RttiAttribute.Helpers.pas',
   StringArray.Helpers in 'Source\Shared\Helpers\StringArray.Helpers.pas',
   Options.Port in 'Source\Shared\Options\Options.Port.pas',
-  Logger.Port in 'Example\Infrastructure\Logging\Logger.Port.pas',
+  Logger.Port in 'Example\Common\Ports\Logger.Port.pas',
   Logger.Options in 'Example\Infrastructure\Logging\Logger.Options.pas',
   Logger in 'Example\Infrastructure\Logging\Logger.pas',
   App.Options in 'Source\Shared\Options\App.Options.pas',
@@ -82,11 +82,18 @@ uses
   Success.Dto in 'Example\Presentation\Contracts\Success.Dto.pas',
   Utils.Controller in 'Example\Presentation\Controllers\Utils.Controller.pas',
   Jwt.Service.Port in 'Example\Application\Ports\Jwt.Service.Port.pas',
-  Syscolon.Context.Port in 'Example\Application\Ports\Syscolon.Context.Port.pas',
-  Syscolon.Client.Factory.Port in 'Example\Infrastructure\Ports\Syscolon.Client.Factory.Port.pas',
   Http.Server.Options in 'Source\Http\Options\Http.Server.Options.pas',
   Options.Registry in 'Source\Shared\Options\Options.Registry.pas',
-  Dependency.Attributes in 'Source\Shared\Dependencies\Dependency.Attributes.pas';
+  Dependency.Attributes in 'Source\Shared\Dependencies\Dependency.Attributes.pas',
+  Pui.Client.Port in 'Example\Application\Ports\Pui.Client.Port.pas',
+  Report.Dto in 'Example\Application\Contracts\Report.Dto.pas',
+  Match.Dto in 'Example\Application\Contracts\Match.Dto.pas',
+  Event.Dto in 'Example\Application\Contracts\Event.Dto.pas',
+  Pui in 'Example\Infrastructure\Pui\Pui.pas',
+  Pui.Options in 'Example\Infrastructure\Pui\Pui.Options.pas',
+  PuiSignIn.Dto in 'Example\Infrastructure\Pui\Contracts\PuiSignIn.Dto.pas',
+  CustomExceptions in 'Example\Common\Exceptions\CustomExceptions.pas',
+  FinalizeSearch.Dto in 'Example\Application\Contracts\FinalizeSearch.Dto.pas';
 
 begin
   try
