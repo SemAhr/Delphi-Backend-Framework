@@ -5,13 +5,13 @@ The framework exposes typed configuration through `IOptions<T>` and `TOptions<T>
 Core unit:
 
 ```text
-Source/Shared/Options/Options.Port.pas
+Source/Core/Options.Port.pas
 ```
 
 Registration/runtime unit:
 
 ```text
-Source/Shared/Options/Options.Registry.pas
+Source/Core/Options.Registry.pas
 ```
 
 ## Core types
@@ -116,7 +116,7 @@ The framework uses a JSON root object.
 Unit:
 
 ```text
-Source/Shared/Options/App.Options.pas
+Source/Core/App.Options.pas
 ```
 
 Current type:
@@ -147,7 +147,7 @@ The default loader is configured by `TAppContainer`.
 Unit:
 
 ```text
-Source/Shared/Options/App.Options.Loader.pas
+Source/Core/App.Options.Loader.pas
 ```
 
 The default loader is:

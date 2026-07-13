@@ -38,10 +38,6 @@ type
     [JsonName('curp')]
     property Curp: string read FCurp write FCurp;
 
-    [Required]
-    [JsonName('lugar_nacimiento')]
-    property PlaceOfBirth: string read FPlaceOfBirth write FPlaceOfBirth;
-
     [JsonName('nombre')]
     [Length(0, 50)]
     property Name: string read FName write FName;
@@ -61,6 +57,10 @@ type
     [IsDate]
     [JsonName('fecha_desaparicion')]
     property DateOfDisappearance: TDate read FDateOfDisappearance write FDateOfDisappearance;
+
+    [Required]
+    [JsonName('lugar_nacimiento')]
+    property PlaceOfBirth: string read FPlaceOfBirth write FPlaceOfBirth;
 
     [JsonName('sexo_asignado')]
     property AssignedSex: string read FAssignedSex write FAssignedSex;

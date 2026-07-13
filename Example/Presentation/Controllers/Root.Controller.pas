@@ -92,7 +92,7 @@ end;
 function TRootController.DeactivateReport(const ARequestDto: TDeactivateReportDto): TSuccessDto;
 begin
   Result := TSuccessDto.Create;
-  Result.Message := 'Reporte desactivado correctamente.';
+  Result.Message := 'Registro de finalización de búsqueda histórica guardado correctamente.';
 end;
 
 { Testing }

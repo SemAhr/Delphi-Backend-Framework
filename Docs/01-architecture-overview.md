@@ -5,10 +5,10 @@ BackendFramework is organized so framework code lives outside `Src`, while `Src`
 ## Main areas
 
 ```text
-Shared/       Shared framework infrastructure
-Http/         HTTP server, routing, context, parameters, middlewares
+Core/         Dependency container, options, helpers and framework infrastructure
+Http/         HTTP server, routing, context, parameters and middleware
 Dto/          DTO contracts, binding and validation
-Src/          Application/test code only
+Example/      Example application code
 Docs/         Documentation
 Config/       Default runtime configuration files
 ```

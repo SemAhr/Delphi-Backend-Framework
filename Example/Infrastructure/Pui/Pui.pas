@@ -3,7 +3,7 @@ unit Pui;
 interface
 
 uses
-  Pui.Client.Port,
+  Pui.Port,
   Logger.Port,
   Options.Port,
   Pui.Options,
@@ -25,7 +25,7 @@ type
     CreatedAt: TDateTime;
   end;
 
-  TPui = class(TInterfacedObject, IPuiClient)
+  TPui = class(TInterfacedObject, IPui)
   private
     FSession: TPuiSession;
     FOptions: TPuiOptions;

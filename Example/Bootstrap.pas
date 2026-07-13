@@ -23,12 +23,12 @@ uses
   Root.Controller,
   Utils.Controller,
   Logger.Port,
-  Pui.Client.Port,
+  Pui.Port,
   SignIn.UseCase.Port,
   ActivateReport.UseCase.Port,
   DeactivateReport.UseCase.Port,
   Logger,
-  Pui.Client,
+  Pui,
   SignIn.UseCase,
   ActivateReport.UseCase,
   DeactivateReport.UseCase;
@@ -51,7 +51,7 @@ begin
     ]);
 
     App.AddSingleton<ILogger, TLogger>;
-    App.AddSingleton<IPuiClient, TPuiClient>;
+    App.AddSingleton<IPui, TPui>;
 
     App.AddScoped<ISignInUseCase, TSignInUseCase>;
     App.AddScoped<IActivateReportUseCase, TActivateReportUseCase>;

@@ -4,23 +4,23 @@ This document describes conventions used in the repository.
 
 ## Framework code vs application code
 
-Framework code must live outside `Src`.
-
-Examples:
+Framework code lives under `Source` and is organized into three top-level areas:
 
 ```text
-Shared/
-Http/
-Dto/
+Source/Core/
+Source/Http/
+Source/Dto/
 ```
 
-`Src` is reserved for:
+Application/demo code lives under `Example`.
+
+`Example` is reserved for:
 
 - application code;
 - test/demo code;
 - project-specific controllers or services.
 
-If a unit is used directly by `TAppContainer`, routing, middleware, DTO binding or shared infrastructure, it belongs outside `Src`.
+If a unit is used directly by `TAppContainer`, routing, middleware, DTO binding or core infrastructure, it belongs under `Source`.
 
 ## Ports
 

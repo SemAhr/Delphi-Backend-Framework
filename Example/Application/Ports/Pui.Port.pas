@@ -1,4 +1,4 @@
-unit Pui.Client.Port;
+unit Pui.Port;
 
 interface
 
@@ -9,7 +9,7 @@ uses
   FinalizeSearch.Dto;
 
 type
-  IPuiClient = interface
+  IPui = interface
     ['{7198f9c8-e373-41a7-8fbc-4ef0cf68f7bc}']
 
     function GetAccessToken: string;

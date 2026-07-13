@@ -5,7 +5,7 @@ Default configuration is loaded by `TAppOptionsLoader`.
 Unit:
 
 ```text
-Shared/Options/App.Options.Loader.pas
+Source/Core/App.Options.Loader.pas
 ```
 
 Default file:

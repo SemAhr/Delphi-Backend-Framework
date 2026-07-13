@@ -5,13 +5,13 @@
 Unit:
 
 ```text
-Source/Shared/Container/Container.App.pas
+Source/Core/Container.App.pas
 ```
 
 Dependency injection attribute unit:
 
 ```text
-Source/Shared/Dependencies/Dependency.Attributes.pas
+Source/Core/Dependency.Attributes.pas
 ```
 
 ## Dependency lifetimes
